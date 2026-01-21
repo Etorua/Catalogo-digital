@@ -11,12 +11,34 @@ function Home({ onNotify }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const { addToCart } = useCart()
 
+    const [isStoreModalOpen, setIsStoreModalOpen] = useState(false)
+    const [selectedStore, setSelectedStore] = useState(null)
+
   // Filtros Avanzados
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [sort, setSort] = useState('')
   const [inStock, setInStock] = useState(false)
   const [page, setPage] = useState(1)
+
+    const stores = [
+        { id: 1, name: 'COAPA MIRAMONTES #8744', status: 'Abierto', hours: 'Cierra a las 10:00 p.m.', address: 'Av. Canal de Miramontes #2053, Col. De los Girasoles, Del. Coyoacán, C.P. 04920', phone: '(55) 5483 3900' },
+        { id: 2, name: 'CENTRO #8860', status: 'Abierto', hours: 'Cierra a las 10:00 p.m.', address: 'Av. Del Taller #370, Col. 24 de Abril, Del. Venustiano Carranza, C.P. 15980', phone: '(55) 5036 1100' },
+        { id: 3, name: 'COAPA DEL HUESO #8702', status: 'Abierto', hours: 'Cierra a las 10:00 p.m.', address: 'Calzada del Hueso #670, Col. Los Robles, Del. Coyoacán, C.P. 04870', phone: '(55) 5624 1400' },
+        { id: 4, name: 'COPILCO #8691', status: 'Abierto', hours: 'Cierra a las 10:00 p.m.', address: 'Eje 10 #546, Col. Los Reyes en Coyoacán, C.P. 04330', phone: '(55) 5338 0900' },
+        { id: 5, name: 'IZTAPALAPA #8747', status: 'Abierto', hours: 'Cierra a las 10:00 p.m.', address: 'Calz. Ermita Iztapalapa #2891, Col. Iztapalapa, C.P. 09310', phone: '(55) 9123 0000' }
+    ]
+
+    const promotions = [
+        { id: 1, title: 'Pisos', tag: 'Hasta 15% de ahorro', image: 'https://images.unsplash.com/photo-1501045661006-fcebe0257c3f?q=80&w=1200&auto=format&fit=crop' },
+        { id: 2, title: 'Baños', tag: 'Hasta 40% de ahorro', image: 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad6?q=80&w=1200&auto=format&fit=crop' },
+        { id: 3, title: 'Calentadores de Agua', tag: 'Hasta 25% de ahorro', image: 'https://images.unsplash.com/photo-1545243424-0ce743321e11?q=80&w=1200&auto=format&fit=crop' },
+        { id: 4, title: 'Refrigeradores', tag: 'Hasta 45% de ahorro', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=1200&auto=format&fit=crop' },
+        { id: 5, title: 'Lavandería', tag: 'Hasta 45% de ahorro', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=1200&auto=format&fit=crop' },
+        { id: 6, title: 'Cajas', tag: '4x3', image: 'https://images.unsplash.com/photo-1487014679447-9f8336841d58?q=80&w=1200&auto=format&fit=crop' },
+        { id: 7, title: 'Herramientas', tag: 'Producto gratis', image: 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?q=80&w=1200&auto=format&fit=crop' },
+        { id: 8, title: 'Pintura', tag: 'Producto gratis', image: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop' }
+    ]
 
   const query = searchParams.get('q') || ''
   const category = searchParams.get('cat') || ''
@@ -67,8 +89,42 @@ function Home({ onNotify }) {
     if(onNotify) onNotify('Producto agregado al carrito', 'success');
   }
 
+    const getImageUrl = (images) => {
+        if (Array.isArray(images) && images.length > 0) return images[0];
+        if (typeof images === 'string' && images) {
+            if (images.startsWith('{') && images.endsWith('}')) {
+                const first = images.slice(1, -1).split(',')[0];
+                return first || 'https://dummyimage.com/600x400/efefef/333.png&text=Producto';
+            }
+            return images;
+        }
+        return 'https://dummyimage.com/600x400/efefef/333.png&text=Producto';
+    }
+
   return (
     <div style={{width: '100%'}}>
+
+            {/* Banner Promocional Superior */}
+            <div className="promo-strip">
+                <img
+                    src="https://images.unsplash.com/photo-1512446733611-9099a758e0e2?q=80&w=1600&auto=format&fit=crop"
+                    alt="Promoción bancaria"
+                />
+                <div className="promo-strip-text">
+                    15% de bonificación con tarjeta digital · 10% con tarjeta física · Compra hoy y paga en abril 2026
+                </div>
+            </div>
+
+            {/* Localizador de Tienda */}
+            <div className="store-locator-banner">
+                <div>
+                    <strong>Localiza tu tienda más cercana</strong>
+                    <div style={{fontSize: '12px', color: '#666'}}>Elige tu ubicación para ver disponibilidad y tiempos de entrega</div>
+                </div>
+                <button className="primary-btn" onClick={() => setIsStoreModalOpen(true)}>
+                    {selectedStore ? `Tienda: ${selectedStore.name}` : 'Elegir tienda'}
+                </button>
+            </div>
 
       {/* Hero Banner Style Home Depot */}
       <div className="hero-carousel" style={{
@@ -112,6 +168,10 @@ function Home({ onNotify }) {
                     PROVEEDORES
                 </h2>
                 
+                <div className="hero-announcement">
+                  Compra ahora y paga en abril 2026 · Promociones bancarias vigentes
+                </div>
+
                 <div style={{marginTop: '25px', display: 'inline-flex', alignItems: 'center', gap: '20px', background: 'rgba(0,0,0,0.7)', padding: '10px 20px', borderRadius: '50px', border: '1px solid #555'}}>
                      <div style={{background: '#f96302', padding: '5px', borderRadius: '4px'}}>
                         <span style={{fontWeight: '900', fontSize: '14px'}}>PRO CENTER</span>
@@ -129,6 +189,20 @@ function Home({ onNotify }) {
                </span>
           </div>
       </div>
+
+            {/* Promociones */}
+            <div style={{margin: '10px 0 30px'}}>
+                <h2 style={{margin: '0 0 15px', fontSize: '18px'}}>Las Mejores Promociones</h2>
+                <div className="promos-grid">
+                    {promotions.map(promo => (
+                        <div className="promo-card" key={promo.id}>
+                            <div className="promo-badge">{promo.tag}</div>
+                            <img src={promo.image} alt={promo.title} />
+                            <div className="promo-title">{promo.title}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
      <div style={{display: 'flex', gap: '30px', alignItems: 'flex-start'}}>
       
@@ -159,6 +233,39 @@ function Home({ onNotify }) {
                  ))}
              </ul>
          </div>
+
+            {isStoreModalOpen && (
+                <div className="store-modal-overlay" onClick={() => setIsStoreModalOpen(false)}>
+                    <div className="store-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="store-modal-header">
+                            <h3>Elige una tienda</h3>
+                            <button className="store-modal-close" onClick={() => setIsStoreModalOpen(false)}>×</button>
+                        </div>
+                        <div className="store-modal-body">
+                            {stores.map(store => (
+                                <div key={store.id} className="store-card">
+                                    <div className="store-title">{store.name}</div>
+                                    <div className="store-status">{store.status} · {store.hours}</div>
+                                    <div className="store-address">{store.address}</div>
+                                    <div className="store-actions">
+                                        <span className="store-phone">{store.phone}</span>
+                                        <button
+                                            className={selectedStore?.id === store.id ? 'store-select active' : 'store-select'}
+                                            onClick={() => {
+                                                setSelectedStore(store)
+                                                setIsStoreModalOpen(false)
+                                                if (onNotify) onNotify('Tienda seleccionada', 'success')
+                                            }}
+                                        >
+                                            {selectedStore?.id === store.id ? 'Tienda seleccionada' : 'Seleccionar tienda'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
          {/* Filtro Precio */}
          <div style={{marginBottom: '20px'}}>
@@ -241,8 +348,14 @@ function Home({ onNotify }) {
             {products.map(product => (
               <Link to={`/product/${product.id}`} key={product.id} style={{textDecoration: 'none'}}>
                   <div className="product-card">
-                    <div className="image-placeholder" style={{backgroundImage: `url(${product.images[0]})`, backgroundSize: 'contain'}}>
-                    </div>
+                                        <div className="image-placeholder" style={{padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                                            <img
+                                                src={getImageUrl(product.images)}
+                                                alt={product.title}
+                                                style={{width: '100%', height: '200px', objectFit: 'contain'}}
+                                                onError={(e) => { e.currentTarget.src = 'https://dummyimage.com/600x400/efefef/333.png&text=Sin+Imagen'; }}
+                                            />
+                                        </div>
                     <div className="card-content">
                         <h3>{product.title}</h3>
                         <div style={{marginTop: 'auto'}}>

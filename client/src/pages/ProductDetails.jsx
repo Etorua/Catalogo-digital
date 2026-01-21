@@ -27,6 +27,18 @@ function ProductDetails({ onNotify }) {
       onNotify('Producto agregado al carrito', 'success');
   }
 
+    const getImageUrl = (images) => {
+        if (Array.isArray(images) && images.length > 0) return images[0];
+        if (typeof images === 'string' && images) {
+            if (images.startsWith('{') && images.endsWith('}')) {
+                const first = images.slice(1, -1).split(',')[0];
+                return first || 'https://dummyimage.com/600x400/efefef/333.png&text=Producto';
+            }
+            return images;
+        }
+        return 'https://dummyimage.com/600x400/efefef/333.png&text=Producto';
+    }
+
   if (loading) return <div>Cargando...</div>
   if (!product) return <div>Producto no encontrado</div>
 
@@ -37,7 +49,12 @@ function ProductDetails({ onNotify }) {
       <div className="details-grid">
         <div className="image-gallery">
             <div className="image-stage">
-                 <img src={product.images[0]} alt={product.title} className="main-image" />
+                                 <img
+                                     src={getImageUrl(product.images)}
+                                     alt={product.title}
+                                     className="main-image"
+                                     onError={(e) => { e.currentTarget.src = 'https://dummyimage.com/600x400/efefef/333.png&text=Sin+Imagen'; }}
+                                 />
             </div>
             
             <div className="description-section">
