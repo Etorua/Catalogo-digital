@@ -401,3 +401,17 @@ main {
     width: 35%;
 }
 
+/* Layout Container for Home */
+.home-container {
+    max-width: 1350px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .home-container {
+    padding: 10px;
+  }
+}
+

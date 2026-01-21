@@ -281,30 +281,63 @@ function Home({ onNotify }) {
 
         {/* Pagination Controls */}
         {!loading && pagination.totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '40px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', marginTop: '40px', marginBottom: '20px', flexWrap: 'wrap' }}>
                 <button 
                     disabled={page === 1}
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     className="secondary-btn"
+                    style={{padding: '5px 10px', fontSize: '13px'}}
                 >
                     Anterior
                 </button>
                 
-                {[...Array(pagination.totalPages)].map((_, i) => (
-                    <button
-                        key={i}
-                        onClick={() => setPage(i + 1)}
-                        className={page === i + 1 ? "primary-btn" : "secondary-btn"}
-                        style={{ width: '40px', padding: '0' }}
-                    >
-                        {i + 1}
-                    </button>
-                ))}
+                {(() => {
+                    const maxButtons = 5;
+                    let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+                    let endPage = startPage + maxButtons - 1;
+
+                    if (endPage > pagination.totalPages) {
+                        endPage = pagination.totalPages;
+                        startPage = Math.max(1, endPage - maxButtons + 1);
+                    }
+
+                    const buttons = [];
+
+                    if (startPage > 1) {
+                         buttons.push(
+                            <button key={1} onClick={() => setPage(1)} className="secondary-btn" style={{ width: '35px', padding: 0 }}>1</button>
+                        );
+                        if (startPage > 2) buttons.push(<span key="dots1" style={{alignSelf:'center'}}>...</span>);
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                        buttons.push(
+                            <button
+                                key={i}
+                                onClick={() => setPage(i)}
+                                className={page === i ? "primary-btn" : "secondary-btn"}
+                                style={{ width: '35px', padding: '0', fontSize: '13px' }}
+                            >
+                                {i}
+                            </button>
+                        );
+                    }
+
+                    if (endPage < pagination.totalPages) {
+                        if (endPage < pagination.totalPages - 1) buttons.push(<span key="dots2" style={{alignSelf:'center'}}>...</span>);
+                        buttons.push(
+                            <button key={pagination.totalPages} onClick={() => setPage(pagination.totalPages)} className="secondary-btn" style={{ width: '35px', padding: 0 }}>{pagination.totalPages}</button>
+                        );
+                    }
+
+                    return buttons;
+                })()}
 
                 <button 
                     disabled={page === pagination.totalPages}
                     onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
                     className="secondary-btn"
+                    style={{padding: '5px 10px', fontSize: '13px'}}
                 >
                     Siguiente
                 </button>

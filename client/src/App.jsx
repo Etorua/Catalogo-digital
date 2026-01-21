@@ -9,6 +9,7 @@ import Promotions from './pages/Promotions'
 import ProSales from './pages/ProSales'
 import Services from './pages/Services'
 import Help from './pages/Help'
+import DynamicPage from './pages/DynamicPage'
 import Toast from './components/Toast'
 import Cart from './pages/Cart'
 import Footer from './components/Footer'
@@ -125,6 +126,7 @@ function App() {
           <Route path="/pro-sales" element={<ProSales />} />
           <Route path="/services" element={<Services />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/info/:slug" element={<DynamicPage />} />
         </Routes>
       </div>
       

@@ -89,7 +89,7 @@ function Footer({ onSubscribe }) {
                 <div>
                     <h4 style={{ color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', marginBottom: '15px' }}>The Pro Center México</h4>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '13px', lineHeight: '2' }}>
-                        <li><Link to="/about" style={{ textDecoration: 'none', color: '#687fa1' }}>Acerca de nosotros</Link></li>
+                        <li><Link to="/info/quienes-somos" style={{ textDecoration: 'none', color: '#687fa1' }}>Iconos y Empresa</Link></li>
                         <li><Link to="/news" style={{ textDecoration: 'none', color: '#687fa1' }}>Noticias y Responsabilidad social</Link></li>
                         <li><Link to="/suppliers" style={{ textDecoration: 'none', color: '#687fa1' }}>Quiero ser proveedor</Link></li>
                         <li><Link to="/careers" style={{ textDecoration: 'none', color: '#687fa1' }}>Haz carrera con nosotros</Link></li>
@@ -99,19 +99,19 @@ function Footer({ onSubscribe }) {
                 <div>
                     <h4 style={{ color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', marginBottom: '15px' }}>¿Cómo Podemos Ayudarte?</h4>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '13px', lineHeight: '2' }}>
-                        <li><Link to="/help" style={{ textDecoration: 'none', color: '#687fa1' }}>Ayuda y preguntas frecuentes</Link></li>
-                        <li><Link to="/invoice" style={{ textDecoration: 'none', color: '#687fa1' }}>Facturación electrónica</Link></li>
-                        <li><Link to="/contact" style={{ textDecoration: 'none', color: '#687fa1' }}>Contáctanos</Link></li>
-                        <li><Link to="/services" style={{ textDecoration: 'none', color: '#687fa1' }}>Califica nuestro servicio</Link></li>
+                        <li><Link to="/info/faq" style={{ textDecoration: 'none', color: '#687fa1' }}>Ayuda y preguntas frecuentes</Link></li>
+                        <li><Link to="/info/facturacion" style={{ textDecoration: 'none', color: '#687fa1' }}>Facturación electrónica</Link></li>
+                        <li><Link to="/info/contacto" style={{ textDecoration: 'none', color: '#687fa1' }}>Contáctanos</Link></li>
+                        <li><Link to="/services" style={{ textDecoration: 'none', color: '#687fa1' }}>Nuestros Servicios</Link></li>
                     </ul>
                 </div>
                 <div>
                     <h4 style={{ color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', marginBottom: '15px' }}>Legales</h4>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '13px', lineHeight: '2' }}>
                         <li><Link to="/terms" style={{ textDecoration: 'none', color: '#687fa1' }}>Términos y condiciones</Link></li>
-                        <li><Link to="/returns" style={{ textDecoration: 'none', color: '#687fa1' }}>Política de devoluciones</Link></li>
+                        <li><Link to="/info/envios-devoluciones" style={{ textDecoration: 'none', color: '#687fa1' }}>Política de devoluciones</Link></li>
                         <li><Link to="/privacy" style={{ textDecoration: 'none', color: '#687fa1' }}>Aviso de privacidad</Link></li>
-                        <li><Link to="/promos" style={{ textDecoration: 'none', color: '#687fa1' }}>Condiciones de promociones</Link></li>
+                        <li><Link to="/info/garantia" style={{ textDecoration: 'none', color: '#687fa1' }}>Centro de Garantías</Link></li>
                     </ul>
                 </div>
                 <div>

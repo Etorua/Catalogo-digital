@@ -2,24 +2,29 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function AdminDashboard({ user }) {
+    const [activeTab, setActiveTab] = useState('products'); // 'products' | 'cms'
+    
+    // --- Product Logic ---
     const [products, setProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [editingProduct, setEditingProduct] = useState(null);
     const [showForm, setShowForm] = useState(false);
-    
-    // Form States
     const [formData, setFormData] = useState({
         sku: '', title: '', price_base: '', stock: '', category: 'General', description: '', image: ''
     });
 
+    // --- CMS Logic ---
+    const [pages, setPages] = useState([]);
+    const [editingPage, setEditingPage] = useState(null);
+    const [cmsFormData, setCmsFormData] = useState({ slug: '', title: '', content: '' });
+
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        if (activeTab === 'products') fetchProducts();
+        if (activeTab === 'cms') fetchPages();
+    }, [activeTab]);
 
     const fetchProducts = () => {
-        // Request higher limit for admin view until admin pagination is implemented
         axios.get('/api/products?limit=100').then(res => {
-            // Check if response is paginated (new format) or flat array (old format/fallback)
             if (res.data.data && Array.isArray(res.data.data)) {
                 setProducts(res.data.data);
             } else {
@@ -28,6 +33,35 @@ function AdminDashboard({ user }) {
         });
     };
 
+    const fetchPages = () => {
+        axios.get('/api/pages').then(res => setPages(res.data)).catch(console.error);
+    };
+
+    const handleCmsEdit = (pageSlug) => {
+        axios.get(`/api/pages/${pageSlug}`).then(res => {
+            setEditingPage(res.data);
+            setCmsFormData(res.data);
+        });
+    };
+
+    const handleCmsSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.put(`/api/pages/${cmsFormData.slug}`, cmsFormData);
+            alert('Página guardada correctamente');
+            setEditingPage(null);
+            fetchPages();
+        } catch (err) {
+            alert('Error al guardar página');
+        }
+    };
+
+    const handleCreateCms = () => {
+        setEditingPage({ isNew: true });
+        setCmsFormData({ slug: '', title: '', content: '' });
+    }
+
+    // --- Product Handlers ---
     const handleDelete = async (id) => {
         if (window.confirm('¿Estás seguro de eliminar este producto?')) {
             await axios.delete(`/api/products/${id}`);
@@ -37,7 +71,6 @@ function AdminDashboard({ user }) {
 
     const handleEdit = (product) => {
         setEditingProduct(product);
-        // Extract first image if array
         const img = Array.isArray(product.images) ? product.images[0] : product.images;
         setFormData({ ...product, image: img });
         setShowForm(true);
@@ -73,12 +106,16 @@ function AdminDashboard({ user }) {
     
     // Filtered Products
     const filteredProducts = products.filter(p => 
-        p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+        p.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (!user || user.role !== 'admin') {
-        return <div style={{textAlign: 'center', marginTop: '50px'}}>Acceso denegado. <a href="/login">Inicia sesión</a></div>;
+        return <div style={{textAlign: 'center', marginTop: '50px', padding: '20px'}}>
+            <h2>Acceso Restringido</h2>
+            <p>Necesitas permisos de administrador para ver esta página.</p>
+            <a href="/login" className="primary-btn" style={{textDecoration:'none', display:'inline-block', marginTop:'10px'}}>Iniciar Sesión</a>
+        </div>;
     }
 
     return (
@@ -87,7 +124,106 @@ function AdminDashboard({ user }) {
             {/* Header & Stats */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                 <h1 style={{fontSize: '24px', fontWeight: 'bold', color: '#333'}}>Panel de Administración</h1>
-                <div style={{display:'flex', gap:'20px'}}>
+                <div style={{display:'flex', gap:'10px'}}>
+                    <button 
+                        onClick={() => setActiveTab('products')} 
+                        className={activeTab === 'products' ? 'primary-btn' : 'secondary-btn'}
+                    >
+                        📦 Productos
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('cms')} 
+                        className={activeTab === 'cms' ? 'primary-btn' : 'secondary-btn'}
+                    >
+                        📄 Contenidos (CMS)
+                    </button>
+                </div>
+            </div>
+
+            {/* --- CMS VIEW --- */}
+            {activeTab === 'cms' && (
+                <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
+                        <h2>Gestor de Páginas Informativas</h2>
+                        <button className="primary-btn" onClick={handleCreateCms}>+ Nueva Página</button>
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', alignItems: 'start'}}>
+                        {/* Lista de Paginas */}
+                        <div style={{background: '#f9f9f9', padding: '10px', borderRadius: '4px'}}>
+                            <h3 style={{fontSize:'14px', marginBottom:'10px', textTransform:'uppercase', color:'#666'}}>Páginas Disponibles</h3>
+                            <ul style={{listStyle:'none', padding:0, margin:0}}>
+                                {pages.map(p => (
+                                    <li key={p.slug} style={{marginBottom:'5px'}}>
+                                        <button 
+                                            onClick={() => handleCmsEdit(p.slug)}
+                                            style={{
+                                                width:'100%', textAlign:'left', padding:'10px', border:'none', 
+                                                background: editingPage && editingPage.slug === p.slug ? '#e0f2fe' : 'white', 
+                                                cursor:'pointer', borderLeft: editingPage && editingPage.slug === p.slug ? '4px solid #0284c7' : '4px solid transparent',
+                                                boxShadow:'0 1px 2px rgba(0,0,0,0.05)'
+                                            }}
+                                        >
+                                            <div style={{fontWeight:'bold'}}>{p.title}</div>
+                                            <small style={{color:'#666'}}>/{p.slug}</small>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Editor */}
+                        {editingPage ? (
+                             <div style={{background: 'white', border: '1px solid #eee', padding:'20px', borderRadius:'8px'}}>
+                                 <h3 style={{marginBottom:'20px'}}>Editando: {cmsFormData.title || 'Nueva Página'}</h3>
+                                 <form onSubmit={handleCmsSubmit} style={{display:'flex', flexDirection:'column', gap:'15px'}}>
+                                     <div style={formGroup}>
+                                        <label style={labelStyle}>Título de la Página</label>
+                                        <input 
+                                            value={cmsFormData.title} 
+                                            onChange={e => setCmsFormData({...cmsFormData, title: e.target.value})} 
+                                            required style={inputStyle}
+                                        />
+                                     </div>
+                                     <div style={formGroup}>
+                                        <label style={labelStyle}>Slug (URL)</label>
+                                        <input 
+                                            value={cmsFormData.slug} 
+                                            onChange={e => setCmsFormData({...cmsFormData, slug: e.target.value})} 
+                                            required style={inputStyle}
+                                            disabled={!editingPage.isNew} 
+                                            placeholder="ej: envios-devoluciones"
+                                        />
+                                     </div>
+                                     <div style={formGroup}>
+                                        <label style={labelStyle}>Contenido (HTML Soportado)</label>
+                                        <textarea 
+                                            value={cmsFormData.content} 
+                                            onChange={e => setCmsFormData({...cmsFormData, content: e.target.value})} 
+                                            required 
+                                            style={{...inputStyle, minHeight:'300px', fontFamily:'monospace', fontSize:'14px'}}
+                                        />
+                                        <small style={{color:'#666'}}>Puedes usar etiquetas HTML como &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, etc.</small>
+                                     </div>
+                                     <div style={{display:'flex', gap:'10px'}}>
+                                         <button type="submit" className="primary-btn">Guardar Contenido</button>
+                                         <button type="button" onClick={() => setEditingPage(null)} className="secondary-btn">Cancelar</button>
+                                     </div>
+                                 </form>
+                             </div>
+                        ) : (
+                            <div style={{padding:'50px', textAlign:'center', color:'#888', background:'#fafafa', border:'2px dashed #ddd', borderRadius:'8px'}}>
+                                Selecciona una página de la izquierda para editar su contenido
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* --- PRODUCTS VIEW --- */}
+            {activeTab === 'products' && (
+                <>
+                <div style={{display:'flex', gap:'20px', marginBottom: '20px'}}>
                      <div style={statCardStyle}>
                         <span style={statLabelStyle}>Productos Totales</span>
                         <strong style={statValueStyle}>{totalProducts}</strong>
@@ -101,20 +237,18 @@ function AdminDashboard({ user }) {
                         <strong style={{...statValueStyle, color: '#166534'}}>${inventoryValue.toLocaleString()}</strong>
                      </div>
                 </div>
-            </div>
 
-            {/* Controls Bar */}
-            <div style={{background:'white', padding:'20px', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', marginBottom:'20px', display:'flex', justifyContent:'space-between'}}>
-                <input 
-                    placeholder="🔍 Buscar por SKU o Nombre..." 
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    style={{padding:'10px', width:'300px', border:'1px solid #ddd', borderRadius:'4px'}}
-                />
-                <button className="primary-btn" onClick={handleCreate} style={{ width: 'auto', padding: '10px 20px' }}>+ Nuevo Producto</button>
-            </div>
+                <div style={{background:'white', padding:'20px', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', marginBottom:'20px', display:'flex', justifyContent:'space-between'}}>
+                    <input 
+                        placeholder="🔍 Buscar por SKU o Nombre..." 
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        style={{padding:'10px', width:'300px', border:'1px solid #ddd', borderRadius:'4px'}}
+                    />
+                    <button className="primary-btn" onClick={handleCreate} style={{ width: 'auto', padding: '10px 20px' }}>+ Nuevo Producto</button>
+                </div>
 
-            {showForm && (
+                {showForm && (
                 <div style={{ background: '#fff', padding: '30px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
                     <h3 style={{marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>
                         {editingProduct ? 'Editar Producto' : 'Crear Nuevo Producto'}
@@ -224,6 +358,8 @@ function AdminDashboard({ user }) {
                     <div style={{padding:'40px', textAlign:'center', color:'#666'}}>No se encontraron productos</div>
                 )}
             </div>
+            </>
+        )}
         </div>
     );
 }

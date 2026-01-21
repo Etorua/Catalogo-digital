@@ -21,68 +21,105 @@ app.get('/api/products', async (req, res) => {
   try {
     const { search, category, minPrice, maxPrice, sort, inStock, page = 1, limit = 9 } = req.query;
     
-    // Construcción dinámica de la query (Simulación)
-    let filtered = [...mockProducts];
-    
+    let queryText = 'SELECT * FROM products WHERE 1=1';
+    let countQueryText = 'SELECT COUNT(*) FROM products WHERE 1=1';
+    let queryParams = [];
+    let paramCount = 1;
+
     // Filtro por Texto (Buscador)
     if (search) {
-        filtered = filtered.filter(p => 
-            p.title.toLowerCase().includes(search.toLowerCase()) || 
-            p.description.toLowerCase().includes(search.toLowerCase()) ||
-            p.sku.toLowerCase().includes(search.toLowerCase())
-        );
+        const searchClause = ` AND (title ILIKE $${paramCount} OR description ILIKE $${paramCount} OR sku ILIKE $${paramCount})`;
+        queryText += searchClause;
+        countQueryText += searchClause;
+        queryParams.push(`%${search}%`);
+        paramCount++;
     }
 
     // Filtro por Categoría
     if (category) {
-        filtered = filtered.filter(p => p.category === category);
+        queryText += ` AND category = $${paramCount}`;
+        countQueryText += ` AND category = $${paramCount}`;
+        queryParams.push(category);
+        paramCount++;
     }
 
     // Filtro por Precio Minimo
     if (minPrice) {
-        filtered = filtered.filter(p => p.price_base >= parseFloat(minPrice));
+        queryText += ` AND price_base >= $${paramCount}`;
+        countQueryText += ` AND price_base >= $${paramCount}`;
+        queryParams.push(parseFloat(minPrice));
+        paramCount++;
     }
 
     // Filtro por Precio Maximo
     if (maxPrice) {
-        filtered = filtered.filter(p => p.price_base <= parseFloat(maxPrice));
+        queryText += ` AND price_base <= $${paramCount}`;
+        countQueryText += ` AND price_base <= $${paramCount}`;
+        queryParams.push(parseFloat(maxPrice));
+        paramCount++;
     }
 
     // Filtro por Stock (Solo disponibles)
     if (inStock === 'true') {
-        filtered = filtered.filter(p => p.stock > 0);
+        const stockClause = ` AND stock > 0`;
+        queryText += stockClause;
+        countQueryText += stockClause;
     }
 
     // Ordenamiento
     if (sort) {
         switch(sort) {
             case 'price_asc':
-                filtered.sort((a, b) => a.price_base - b.price_base);
+                queryText += ` ORDER BY price_base ASC`;
                 break;
             case 'price_desc':
-                filtered.sort((a, b) => b.price_base - a.price_base);
+                queryText += ` ORDER BY price_base DESC`;
                 break;
             case 'name_asc':
-                filtered.sort((a, b) => a.title.localeCompare(b.title));
+                queryText += ` ORDER BY title ASC`;
                 break;
             default:
+                queryText += ` ORDER BY id ASC`; // Default sorting to ensure stability
                 break;
         }
+    } else {
+        queryText += ` ORDER BY id ASC`;
     }
 
     // Paginación
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
-    const startIndex = (pageNum - 1) * limitNum;
-    const endIndex = pageNum * limitNum;
-    const paginatedItems = filtered.slice(startIndex, endIndex);
+    const offset = (pageNum - 1) * limitNum;
+
+    queryText += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    
+    // Ejecutar consultas
+    const totalResult = await pool.query(countQueryText, queryParams);
+    const totalItems = parseInt(totalResult.rows[0].count);
+
+    // Añadir parámetros de paginación
+    queryParams.push(limitNum);
+    queryParams.push(offset);
+    
+    const productsResult = await pool.query(queryText, queryParams);
+
+    // Procesar resultados para añadir imagen por defecto
+    const processedProducts = productsResult.rows.map(p => {
+        if (!p.images || p.images.length === 0) {
+            return { 
+                ...p, 
+                images: ['https://dummyimage.com/400x400/f8f9fa/555.png&text=No+Disponible'] 
+            };
+        }
+        return p;
+    });
 
     res.json({
-        data: paginatedItems,
+        data: processedProducts,
         pagination: {
-            total: filtered.length,
+            total: totalItems,
             currentPage: pageNum,
-            totalPages: Math.ceil(filtered.length / limitNum),
+            totalPages: Math.ceil(totalItems / limitNum),
             limit: limitNum
         }
     });
@@ -94,34 +131,60 @@ app.get('/api/products', async (req, res) => {
 });
 
 // 1.1 Obtener Categorías Disponibles
-app.get('/api/categories', (req, res) => {
-    const categories = mockProducts.reduce((acc, curr) => {
-        acc[curr.category] = (acc[curr.category] || 0) + 1;
-        return acc;
-    }, {});
-    
-    // Retorna array: [{ name: 'Maquinaria', count: 5 }, ...]
-    const categoryList = Object.entries(categories).map(([name, count]) => ({ name, count }));
-    res.json(categoryList);
+app.get('/api/categories', async (req, res) => {
+    try {
+        const categoriesResult = await pool.query(`
+            SELECT category, COUNT(*) as count 
+            FROM products 
+            WHERE category IS NOT NULL 
+            GROUP BY category
+            ORDER BY count DESC
+        `);
+
+        // Formato esperado por el frontend: [{ name: 'Categoria', count: 10 }]
+        const categoryList = categoriesResult.rows.map(row => ({
+            name: row.category,
+            count: parseInt(row.count)
+        }));
+
+        res.json(categoryList);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
 });
 
 // 2. Ficha de Producto Detallada (API)
 app.get('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        // const result = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
         
-        // Mock Implementation
-        const product = mockProducts.find(p => p.id == id || p.sku == id);
+        // Validar si es un ID numérico para consultar la BD
+        const numericId = parseInt(id);
+        if (isNaN(numericId)) {
+             return res.status(400).json({ msg: "ID inválido" });
+        }
+
+        const result = await pool.query('SELECT * FROM products WHERE id = $1', [numericId]);
         
-        if (product) {
+        if (result.rows.length > 0) {
+            const product = result.rows[0];
+            
+            // Asignar imagen por defecto si no tiene
+            if (!product.images || product.images.length === 0) {
+                product.images = ['https://dummyimage.com/600x400/e0e0e0/000000.png&text=Sin+Imagen'];
+            }
+
             // Simular log de "Lead Score" en CRM al ver detalle
-            console.log(`[CRM] Lead Score +1 for product ${product.sku}`);
+            // En un sistema real, haríamos UPDATE products SET lead_score = lead_score + 1 WHERE id = ...
+            console.log(`[CRM] Lead Score +1 for product ID ${product.id}`);
+            
             res.json(product);
         } else {
             res.status(404).json({ msg: "Producto no encontrado" });
         }
     } catch (err) {
+        console.error(err.message);
         res.status(500).send('Server Error');
     }
 });
@@ -151,6 +214,62 @@ app.post('/api/orders', async (req, res) => {
     console.log(`[ERP] Nueva orden recibida de User ${userId}:`, items);
     
     res.json({ success: true, orderId: "ORD-" + Date.now(), msg: "Pedido sincronizado con ERP" });
+});
+
+// --- Páginas Dinámicas (Info, Políticas, etc.) ---
+
+// Obtener página por slug
+app.get('/api/pages/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const result = await pool.query('SELECT * FROM static_pages WHERE slug = $1', [slug]);
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ msg: "Página no encontrada" });
+        }
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Actualizar página (Solo Admin idealmente)
+app.put('/api/pages/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const { title, content } = req.body;
+        
+        const result = await pool.query(
+            'UPDATE static_pages SET title = $1, content = $2 WHERE slug = $3 RETURNING *',
+            [title, content, slug]
+        );
+        
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            // Si no existe, crearla
+            const newPage = await pool.query(
+                'INSERT INTO static_pages (slug, title, content) VALUES ($1, $2, $3) RETURNING *',
+                [slug, title, content]
+            );
+            res.json(newPage.rows[0]);
+        }
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Obtener lista de páginas
+app.get('/api/pages', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT slug, title FROM static_pages ORDER BY title');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
 });
 
 // --- Rutas de Administración (CRUD) ---
