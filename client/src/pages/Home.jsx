@@ -373,9 +373,17 @@ function Home({ onNotify }) {
                                         {product.stock > 0 ? 'Retiro en Tienda' : 'Agotado en Tienda'}
                                     </span>
                                 </div>
+                                
+                                <div 
+                                    className="secondary-btn" 
+                                    style={{marginTop:'15px', width:'100%', fontSize:'14px', padding:'8px', boxSizing: 'border-box', textAlign: 'center', marginBottom: '8px', color: '#333', border: '1px solid #ccc', backgroundColor: 'white'}}
+                                >
+                                    Ver Detalles
+                                </div>
+
                                 <button 
                                     className="primary-btn" 
-                                    style={{marginTop:'15px', width:'100%', fontSize:'14px', padding:'10px'}}
+                                    style={{width:'100%', fontSize:'14px', padding:'10px', backgroundColor: '#f96302', color: 'white', border: 'none', fontWeight: 'bold'}}
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleAddToCartClick(product);

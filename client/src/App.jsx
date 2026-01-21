@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import ProductDetails from './pages/ProductDetails'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import AdminDashboard from './pages/AdminDashboard'
 import Departments from './pages/Departments'
 import Promotions from './pages/Promotions'
@@ -13,6 +14,7 @@ import DynamicPage from './pages/DynamicPage'
 import Toast from './components/Toast'
 import Cart from './pages/Cart'
 import Footer from './components/Footer'
+import ChatWidget from './components/ChatWidget'
 import { useCart } from './context/CartContext'
 
 function App() {
@@ -21,6 +23,10 @@ function App() {
 
   const { getCartCount } = useCart()
   const navigate = useNavigate()
+  const location = useLocation();
+
+  // Rutas donde NO queremos mostrar el Header/Footer estándar
+  const isStandalonePage = location.pathname.startsWith('/admin') || location.pathname === '/login' || location.pathname === '/register';
 
   const showNotification = (message, type = 'info') => {
       setNotification({ message, type });
@@ -39,6 +45,7 @@ function App() {
 
   return (
     <div>
+      {!isStandalonePage && (
       <header>
         {/* Top Header: Logo, Location, Search, User */}
         <div className="container header-top">
@@ -106,8 +113,9 @@ function App() {
             </nav>
         </div>
       </header>
+      )}
       
-      <div className="container" style={{marginTop: '20px', minHeight: '80vh'}}>
+      <div className={isStandalonePage ? "" : "container"} style={isStandalonePage ? {} : {marginTop: '20px', minHeight: '80vh'}}>
         {notification && (
             <Toast 
                 message={notification.message} 
@@ -117,11 +125,13 @@ function App() {
         )}
         <Routes>
           <Route path="/" element={<Home onNotify={showNotification} />} />
-          <Route path="/cart" element={<Cart />} />
+          <Route path="/cart" element={<Cart user={user} />} />
           <Route path="/product/:id" element={<ProductDetails onNotify={showNotification}/>} />
           <Route path="/login" element={<Login onLogin={setUser} />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/admin" element={<AdminDashboard user={user} />} />
           <Route path="/departments" element={<Departments />} />
+
           <Route path="/promotions" element={<Promotions />} />
           <Route path="/pro-sales" element={<ProSales />} />
           <Route path="/services" element={<Services />} />
@@ -130,7 +140,10 @@ function App() {
         </Routes>
       </div>
       
-      <Footer onSubscribe={showNotification} />
+      {!isStandalonePage && <Footer onSubscribe={showNotification} />}
+      
+      {/* Global Chat Widget */}
+      <ChatWidget />
     </div>
   )
 }

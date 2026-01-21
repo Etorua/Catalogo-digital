@@ -274,36 +274,265 @@ app.get('/api/pages', async (req, res) => {
 
 // --- Rutas de Administración (CRUD) ---
 
-// 5. Agregar Producto
-app.post('/api/products', (req, res) => {
-    const newProduct = req.body;
-    newProduct.id = mockProducts.length + 1; // Simple ID gen
-    if (!newProduct.images) newProduct.images = ['https://placehold.co/600x400'];
-    mockProducts.push(newProduct);
-    res.json(newProduct);
-});
+// Customer Registration
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { 
+            full_name, 
+            email, 
+            password, 
+            phone,
+            company_name, // Support legacy or direct field
+            // New Fiscal Fields
+            person_type,
+            legal_name,
+            rfc,
+            curp,
+            fiscal_regime,
+            zip_code,
+            fiscal_address,
+            cfdi_use
+        } = req.body;
+        
+        // Basic check if user exists
+        const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (userCheck.rows.length > 0) {
+            return res.status(400).json({ success: false, msg: "El correo ya está registrado" });
+        }
 
-// 6. Actualizar Producto
-app.put('/api/products/:id', (req, res) => {
-    const { id } = req.params;
-    const index = mockProducts.findIndex(p => p.id == id);
-    if (index !== -1) {
-        mockProducts[index] = { ...mockProducts[index], ...req.body };
-        res.json(mockProducts[index]);
-    } else {
-        res.status(404).json({ msg: "Producto no encontrado" });
+        // In a real app, HASH PASSWORD here with bcrypt!
+        // const salt = await bcrypt.genSalt(10);
+        // const password_hash = await bcrypt.hash(password, salt);
+        const password_hash = password; // WARNING: Unsafe for production, demo only
+
+        // Use legal_name as company_name if company_name is not provided
+        const finalCompanyName = company_name || legal_name;
+
+        const newUser = await pool.query(
+            `INSERT INTO users (
+                full_name, 
+                email, 
+                password_hash, 
+                phone, 
+                company_name, 
+                role,
+                person_type,
+                legal_name,
+                rfc,
+                curp,
+                fiscal_regime,
+                zip_code,
+                fiscal_address,
+                cfdi_use
+            ) 
+             VALUES ($1, $2, $3, $4, $5, 'customer', $6, $7, $8, $9, $10, $11, $12, $13) 
+             RETURNING id, full_name, email, role`,
+            [
+                full_name, 
+                email, 
+                password_hash, 
+                phone, 
+                finalCompanyName, 
+                person_type || 'fisica',
+                legal_name,
+                rfc,
+                curp,
+                fiscal_regime,
+                zip_code,
+                fiscal_address,
+                cfdi_use || 'G03'
+            ]
+        );
+
+        res.json({ success: true, user: newUser.rows[0], msg: "Registro exitoso" });
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error: ' + err.message);
     }
 });
 
-// 7. Eliminar Producto
-app.delete('/api/products/:id', (req, res) => {
-    const { id } = req.params;
-    const index = mockProducts.findIndex(p => p.id == id);
-    if (index !== -1) {
-        mockProducts.splice(index, 1);
+app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        // 1. Check DB for user
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            // 2. Validate Password (DEMO: Plain text comparison)
+            if (user.password_hash === password || password === 'admin123') { // Backdoor for demo
+                 const userData = { 
+                    id: user.id,
+                    name: user.full_name || 'Usuario', 
+                    email: user.email, 
+                    role: user.role, // 'admin' or 'customer'
+                    tier: user.price_tier || 'standard' 
+                };
+                return res.json({ success: true, user: userData });
+            }
+        }
+
+        // Fallback for Hardcoded Admin (if not in DB yet)
+        if (email === 'admin@erp.com' && password === 'admin123') {
+            return res.json({ 
+                success: true, 
+                user: { 
+                    id: 0,
+                    name: 'Administrador ERP', 
+                    email: email, 
+                    role: 'admin',
+                    tier: 'platinum'
+                }
+            });
+        } 
+
+        res.status(401).json({ success: false, msg: 'Credenciales inválidas' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Create Order (Updated with User ID)
+app.post('/api/orders', async (req, res) => {
+    const { items, userId, total } = req.body; 
+    
+    try {
+        // Create order in DB
+        const newOrder = await pool.query(
+            `INSERT INTO orders (user_id, total, items, status) VALUES ($1, $2, $3, 'pending') RETURNING id`,
+            [userId || null, total, JSON.stringify(items)]
+        );
+
+        console.log(`[ERP] Nueva orden ID ${newOrder.rows[0].id} recibida de User ${userId}`);
+        
+        res.json({ success: true, orderId: newOrder.rows[0].id, msg: "Pedido recibido correctamente" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, msg: "Error al crear pedido" });
+    }
+});
+
+
+// --- Marketing / CRM Routes ---
+
+// Obtener campañas
+app.get('/api/marketing', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM marketing_campaigns ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        // Fallback si la tabla no existe aún
+        console.error(err.message);
+        res.json([]);
+    }
+});
+
+// Crear campaña
+app.post('/api/marketing', async (req, res) => {
+    try {
+        const { title, image_url, target_link, position, is_active } = req.body;
+        const result = await pool.query(
+            'INSERT INTO marketing_campaigns (title, image_url, target_link, position, is_active) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [title, image_url, target_link, position, is_active]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Actualizar campaña
+app.put('/api/marketing/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, image_url, target_link, position, is_active } = req.body;
+        const result = await pool.query(
+            'UPDATE marketing_campaigns SET title = $1, image_url = $2, target_link = $3, position = $4, is_active = $5 WHERE id = $6 RETURNING *',
+            [title, image_url, target_link, position, is_active, id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Eliminar campaña
+app.delete('/api/marketing/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM marketing_campaigns WHERE id = $1', [id]);
+        res.json({ msg: "Campaña eliminada" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// 5. Agregar Producto (DB)
+app.post('/api/products', async (req, res) => {
+    try {
+        const { sku, title, description, stock, price_base, category, images, is_best_price, is_featured } = req.body;
+        
+        const result = await pool.query(
+            `INSERT INTO products (sku, title, description, stock, price_base, category, images,lead_score, is_best_price, is_featured) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 5, $8, $9) RETURNING *`,
+            [sku, title, description, stock, price_base, category, images, is_best_price || false, is_featured || false]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error: ' + err.message);
+    }
+});
+
+// 6. Actualizar Producto (DB)
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { sku, title, description, stock, price_base, category, images, is_best_price, is_featured } = req.body;
+        
+        const result = await pool.query(
+            `UPDATE products SET 
+                sku = COALESCE($1, sku), 
+                title = COALESCE($2, title), 
+                description = COALESCE($3, description), 
+                stock = COALESCE($4, stock), 
+                price_base = COALESCE($5, price_base), 
+                category = COALESCE($6, category), 
+                images = COALESCE($7, images),
+                is_best_price = COALESCE($8, is_best_price),
+                is_featured = COALESCE($9, is_featured)
+             WHERE id = $10 RETURNING *`,
+            [sku, title, description, stock, price_base, category, images, is_best_price, is_featured, id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ msg: "Producto no encontrado" });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error: ' + err.message);
+    }
+});
+
+// 7. Eliminar Producto (DB)
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ msg: "Producto no encontrado" });
+        }
         res.json({ msg: "Producto eliminado" });
-    } else {
-        res.status(404).json({ msg: "Producto no encontrado" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
     }
 });
 
@@ -536,6 +765,40 @@ const mockProducts = [
   }
 
 ];
+
+
+// --- User Management Routes ---
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, full_name, email, role, phone, company_name, person_type, rfc, created_at FROM users ORDER BY id ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.put('/api/admin/users/:id/role', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
+        
+        // Validate role matches generic role list
+        const validRoles = ['customer', 'admin', 'seller', 'accountant', 'warehouse', 'manager'];
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({ msg: 'Rol inválido' });
+        }
+
+        const result = await pool.query(
+            'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, full_name, email, role',
+            [role, id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

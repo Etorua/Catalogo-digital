@@ -122,7 +122,7 @@ function ProductDetails({ onNotify }) {
                         onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                         style={{width:'60px', padding:'10px', textAlign:'center', border:'1px solid #ccc', fontWeight:'bold'}} 
                     />
-                    <button onClick={handleAddToCart} className="primary-btn" disabled={product.stock <= 0} style={{flexGrow: 1}}>
+                    <button onClick={handleAddToCart} className="primary-btn" disabled={product.stock <= 0} style={{flexGrow: 1, backgroundColor: '#f96302', color: 'white', border: 'none', fontWeight: 'bold'}}>
                         Agregar al Carrito
                     </button>
                 </div>
