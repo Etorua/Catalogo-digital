@@ -55,12 +55,40 @@ function AdminDashboard({ user }) {
     // --- User Logic ---
     const [users, setUsers] = useState([]);
 
+    // --- Order Logic ---
+    const [orders, setOrders] = useState([]);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+
     useEffect(() => {
         fetchProducts(); // Always fetch products for stats
         if (activeTab === 'cms') fetchPages();
         if (activeTab === 'marketing') fetchMarketing();
         if (activeTab === 'users') fetchUsers();
+        if (activeTab === 'orders') fetchOrders();
     }, [activeTab]);
+
+    const fetchOrders = () => {
+        axios.get('/api/orders/admin').then(res => setOrders(res.data)).catch(console.error);
+    };
+
+    const handleViewOrder = async (orderId) => {
+        try {
+            const res = await axios.get(`/api/orders/admin/${orderId}`);
+            setSelectedOrder(res.data);
+        } catch (err) {
+            alert('Error cargando orden');
+        }
+    };
+
+    const handleUpdateStatus = async (orderId, newStatus) => {
+        try {
+            await axios.put(`/api/orders/admin/${orderId}/status`, { status: newStatus });
+            if (selectedOrder) setSelectedOrder({...selectedOrder, status: newStatus});
+            fetchOrders();
+        } catch (err) {
+            alert('Error actualizando estatus');
+        }
+    }
 
     const fetchUsers = () => {
         axios.get('/api/admin/users').then(res => setUsers(res.data)).catch(console.error);
@@ -237,6 +265,12 @@ function AdminDashboard({ user }) {
     const lowStock = products.filter(p => p.stock < 10).length;
     const inventoryValue = products.reduce((acc, p) => acc + (p.price_base * p.stock), 0);
     
+    // Order Stats
+    const totalOrders = orders.length;
+    const pendingOrders = orders.filter(o => o.status === 'pending').length;
+    const itemsSold = orders.reduce((acc, o) => acc + parseInt(o.items_count || 0), 0);
+    const revenue = orders.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + parseFloat(o.total || 0), 0);
+
     // Filtered Products
     const filteredProducts = products.filter(p => {
         const matchesTerm = p.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -315,8 +349,15 @@ function AdminDashboard({ user }) {
                             <Users size={18} /> Usuarios
                         </button>
                     </li>
+                    <li>
+                        <button 
+                            className={activeTab === 'orders' ? 'active' : ''} 
+                            onClick={() => setActiveTab('orders')}
+                        >
+                            <ClipboardList size={18} /> Pedidos
+                        </button>
+                    </li>
                     <li><button disabled style={{opacity:0.5}}><LayoutList size={18} /> Departamentos</button></li>
-                    <li><button disabled style={{opacity:0.5}}><ClipboardList size={18} /> Reportes</button></li>
                     <li><button disabled style={{opacity:0.5}}><Settings size={18} /> Configuración</button></li>
                 </ul>
                 
@@ -376,24 +417,45 @@ function AdminDashboard({ user }) {
                         <div className="stats-grid">
                             <div className="stat-card">
                                 <div className="stat-icon-wrapper"><Megaphone size={24} color="#f96302" /></div>
-                                <div className="stat-value">2</div>
+                                <div className="stat-value">{campaigns.filter(c => c.is_active).length}</div>
                                 <div className="stat-label">Campañas Activas</div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon-wrapper"><Users size={24} color="#0284c7" /></div>
-                                <div className="stat-value">12</div>
-                                <div className="stat-label">Nuevos Clientes (Mes)</div>
+                                <div className="stat-value">{users.length}</div>
+                                <div className="stat-label">Usuarios Registrados</div>
                             </div>
                              <div className="stat-card">
                                 <div className="stat-icon-wrapper"><ClipboardList size={24} color="#4b5563" /></div>
-                                <div className="stat-value">5</div>
+                                <div className="stat-value">{pendingOrders}</div>
                                 <div className="stat-label">Pedidos Pendientes</div>
+                            </div>
+                        </div>
+
+                        <div className="stats-grid" style={{marginTop: '20px'}}>
+                            <div className="stat-card" style={{gridColumn: 'span 3'}}>
+                                <div className="stat-icon-wrapper"><DollarSign size={24} color="#166534" /></div>
+                                <div className="stat-value" style={{color: '#166534'}}>${revenue.toLocaleString()}</div>
+                                <div className="stat-label">Ventas Totales (Realizadas)</div>
                             </div>
                         </div>
 
                         <h3 style={{marginTop: '40px'}}>Actividad Reciente</h3>
                         <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'}}>
-                            <p style={{color: '#666', fontStyle: 'italic'}}>No hay actividad reciente registrada en las últimas 24 horas.</p>
+                            {orders.slice(0, 5).map(o => (
+                                <div key={o.id} style={{display:'flex', justifyContent:'space-between', padding:'10px', borderBottom:'1px solid #eee'}}>
+                                    <div>
+                                        <strong>Orden #{o.id}</strong> - {o.customer_name}
+                                    </div>
+                                    <div>
+                                        <span onClick={() => setActiveTab('orders')} style={{cursor:'pointer', padding:'2px 8px', borderRadius:'4px', fontSize:'12px', background: o.status === 'pending' ? '#fef3c7' : '#dcfce7', color: o.status === 'pending' ? '#92400e' : '#166534'}}>
+                                            {o.status.toUpperCase()}
+                                        </span>
+                                        <span style={{marginLeft: '10px'}}>${parseFloat(o.total).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            ))}
+                            {orders.length === 0 && <p style={{color: '#666', fontStyle: 'italic'}}>No hay actividad reciente.</p>}
                         </div>
                      </>
                  )}
@@ -679,6 +741,112 @@ function AdminDashboard({ user }) {
                 </div>
             )}
 
+            
+            {/* --- ORDERS VIEW --- */}
+            {activeTab === 'orders' && (
+                <div style={{display: 'flex', gap: '2rem'}}>
+                    {/* List */}
+                    <div style={{flex: 2, background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
+                        <h2 style={{marginBottom: '20px'}}>Control de Pedidos</h2>
+                        <div style={{overflowX: 'auto'}}>
+                            <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
+                                <thead style={{background: '#f8fafc', borderBottom: '2px solid #e2e8f0'}}>
+                                    <tr>
+                                        <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>ID</th>
+                                        <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Cliente</th>
+                                        <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Fecha</th>
+                                        <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Total</th>
+                                        <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Estado</th>
+                                        <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {orders.map(o => (
+                                        <tr key={o.id} style={{borderBottom:'1px solid #f1f5f9', background: selectedOrder?.id === o.id ? '#f0f9ff' : 'transparent'}}>
+                                            <td style={{padding:'12px'}}>#{o.id}</td>
+                                            <td style={{padding:'12px'}}>
+                                                <div style={{fontWeight:'bold'}}>{o.customer_name}</div>
+                                                <div style={{color:'#64748b', fontSize:'12px'}}>{o.customer_email}</div>
+                                            </td>
+                                            <td style={{padding:'12px'}}>{new Date(o.created_at).toLocaleDateString()}</td>
+                                            <td style={{padding:'12px', fontWeight:'bold'}}>${parseFloat(o.total).toLocaleString()}</td>
+                                            <td style={{padding:'12px'}}>
+                                                <span style={{
+                                                    background: o.status === 'pending' ? '#fef3c7' : o.status === 'completed' ? '#dcfce7' : '#fee2e2',
+                                                    color: o.status === 'pending' ? '#92400e' : o.status === 'completed' ? '#166534' : '#991b1b',
+                                                    padding: '4px 8px', borderRadius:'12px', fontSize:'12px', fontWeight:'bold'
+                                                }}>
+                                                    {o.status.toUpperCase()}
+                                                </span>
+                                            </td>
+                                            <td style={{padding:'12px'}}>
+                                                <button onClick={() => handleViewOrder(o.id)} style={{background:'#0ea5e9', color:'white', border:'none', padding:'6px 10px', borderRadius:'4px', cursor:'pointer'}}>Ver Detalle</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Detail Panel */}
+                    <div style={{flex: 1, background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', height: 'fit-content'}}>
+                        {selectedOrder ? (
+                            <>
+                                <h3 style={{marginTop:0, borderBottom:'1px solid #eee', paddingBottom:'10px'}}>Detalle Orden #{selectedOrder.id}</h3>
+                                
+                                <div style={{marginBottom:'20px'}}>
+                                    <label style={{display:'block', color:'#666', fontSize:'12px'}}>Estado del Pedido:</label>
+                                    <select 
+                                        value={selectedOrder.status}
+                                        onChange={(e) => handleUpdateStatus(selectedOrder.id, e.target.value)}
+                                        style={{width:'100%', padding:'8px', marginTop:'5px', borderRadius:'4px', border:'1px solid #ddd'}}
+                                    >
+                                        <option value="pending">Pendiente de Pago</option>
+                                        <option value="paid">Pagado</option>
+                                        <option value="processing">En Proceso (Almacén)</option>
+                                        <option value="shipped">Enviado</option>
+                                        <option value="completed">Entregado</option>
+                                        <option value="cancelled">Cancelado</option>
+                                    </select>
+                                </div>
+
+                                <div style={{background:'#f8fafc', padding:'15px', borderRadius:'6px', marginBottom:'20px'}}>
+                                    <h4 style={{margin:'0 0 10px 0', fontSize:'14px', color:'#475569'}}>Datos de Envío</h4>
+                                    <p style={{margin:0, fontSize:'14px'}}><strong>{selectedOrder.customer_name}</strong></p>
+                                    <p style={{margin:0, fontSize:'13px', color:'#666'}}>{selectedOrder.shipping_address}</p>
+                                    <p style={{margin:0, fontSize:'13px', color:'#666'}}>{selectedOrder.shipping_city}, {selectedOrder.shipping_zip}</p>
+                                    <p style={{margin:0, fontSize:'13px', color:'#666'}}>{selectedOrder.customer_email}</p>
+                                </div>
+
+                                <h4 style={{fontSize:'14px', color:'#475569'}}>Productos ({selectedOrder.items?.length || 0})</h4>
+                                <div style={{display:'flex', flexDirection:'column', gap:'10px', maxHeight:'400px', overflowY:'auto'}}>
+                                    {selectedOrder.items?.map(item => (
+                                        <div key={item.id} style={{display:'flex', gap:'10px', alignItems:'center', borderBottom:'1px solid #eee', paddingBottom:'10px'}}>
+                                            <img src={item.images && item.images[0] ? item.images[0] : 'https://placehold.co/50'} style={{width:'50px', height:'50px', objectFit:'cover', borderRadius:'4px'}} />
+                                            <div style={{flex:1}}>
+                                                <div style={{fontSize:'13px', fontWeight:'bold'}}>{item.title}</div>
+                                                <div style={{fontSize:'12px', color:'#666'}}>SKU: {item.sku}</div>
+                                                <div style={{fontSize:'12px'}}>Cant: {item.quantity} x ${item.unit_price}</div>
+                                            </div>
+                                            <div style={{fontWeight:'bold'}}>${item.subtotal}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div style={{borderTop:'2px solid #eee', marginTop:'20px', paddingTop:'15px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                    <span style={{fontSize:'16px'}}>Total:</span>
+                                    <span style={{fontSize:'20px', fontWeight:'bold', color:'#166534'}}>${parseFloat(selectedOrder.total).toLocaleString()}</span>
+                                </div>
+                            </>
+                        ) : (
+                            <div style={{textAlign:'center', color:'#999', padding:'40px'}}>
+                                <p>Selecciona una orden para ver los detalles completos y gestionar su estado.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
             
             {/* --- USERS VIEW --- */}
             {activeTab === 'users' && (

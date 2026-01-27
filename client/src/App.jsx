@@ -125,7 +125,7 @@ function App() {
         )}
         <Routes>
           <Route path="/" element={<Home onNotify={showNotification} />} />
-          <Route path="/cart" element={<Cart user={user} />} />
+          <Route path="/cart" element={<Cart user={user} onNotify={showNotification} />} />
           <Route path="/product/:id" element={<ProductDetails onNotify={showNotification}/>} />
           <Route path="/login" element={<Login onLogin={setUser} />} />
           <Route path="/register" element={<Register />} />

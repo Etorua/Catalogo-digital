@@ -21,10 +21,26 @@ sudo -u postgres psql -c "ALTER USER catalog_user CREATEDB;"
 # We assume the script is running from the root of the app where server/database.sql is
 export PGPASSWORD='catalog_password'
 # Clean import - carefull with data loss, but this is fresh install
-psql -h localhost -U catalog_user -d catalog_db -f server/database.sql
+# We use || true to ignore errors if objects already exist
+psql -h localhost -U catalog_user -d catalog_db -f server/database.sql || true
+
+# Apply Migrations (Updates)
+echo "Applying Migrations..."
+psql -h localhost -U catalog_user -d catalog_db -f server/update_orders_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_marketing_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_users_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_fiscal_schema.sql || true
+
+# Seed Data (New Products)
+echo "Seeding Products..."
+cd server
+npm install
+DB_USER=catalog_user DB_PASSWORD=catalog_password DB_NAME=catalog_db DB_HOST=localhost node seed_products.js || true
 
 # Setup Backend
-cd server
+# (Already in server folder)
+# npm install (Already done above)
+# Update .env or use environment variables in PM2
 npm install
 # Update .env or use environment variables in PM2
 # Start API

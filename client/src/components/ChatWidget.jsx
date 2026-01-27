@@ -1,16 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Paperclip, Smile, Clock } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [isBusinessOpen, setIsBusinessOpen] = useState(true);
     const [messages, setMessages] = useState([
-        { id: 1, text: "¡Hola! 👋 Bienvenido a nuestro soporte en línea. ¿En qué podemos ayudarte hoy?", sender: 'bot', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
+        { id: 1, text: "🤖 ¡Hola! Soy el nuevo asistente con IA de Bienestar. Puedo buscar precios, existencias y productos por ti. ¿Qué necesitas?", sender: 'bot', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
     ]);
     const [showOptions, setShowOptions] = useState(true);
     const [inputValue, setInputValue] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
+    const navigate = useNavigate();
+
+    // Version Check Log
+    useEffect(() => {
+        console.log("ChatWidget v2.1 Loaded - AI Enabled");
+    }, []);
     
     // Configuración de Agentes (Simulación de sistema de colas)
     // En un sistema real, esto vendría de una API que revisa el estado "En Línea" de cada agente
@@ -21,10 +29,10 @@ export default function ChatWidget() {
     ];
 
     const quickActions = [
-        { id: 'stock', text: '📦 Consultar Existencias' },
+        { id: 'stock', text: '🔎 Buscar Producto' },
         { id: 'order', text: '🚚 Estado de mi Pedido' },
-        { id: 'quote', text: '📄 Solicitar Cotización' },
-        { id: 'human', text: '👤 Hablar con un Asesor' }
+        { id: 'location', text: '📍 Ubicación' },
+        { id: 'human', text: '👤 Soporte Humano' }
     ];
 
     const scrollToBottom = () => {
@@ -69,7 +77,7 @@ export default function ChatWidget() {
             
             setMessages(prev => [...prev, { 
                 id: Date.now(), 
-                text: "🔎 Verificando disponibilidad de asesores...", 
+                text: "🔎 Transfiriendo con un humano en WhatsApp...", 
                 sender: 'bot', 
                 time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
             }]);
@@ -84,7 +92,7 @@ export default function ChatWidget() {
                 setIsTyping(false);
                 setMessages(prev => [...prev, { 
                     id: Date.now() + 1, 
-                    text: `✅ Conectado. Te atenderá ${randomAgent.name}.`, 
+                    text: `✅ Te atenderá ${randomAgent.name}.`, 
                     sender: 'bot', 
                     time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
                 }]);
@@ -96,7 +104,7 @@ export default function ChatWidget() {
                     // Agregar botón manual por si falla el popup automático
                     setMessages(prev => [...prev, { 
                          id: Date.now() + 2, 
-                         text: "Clic aquí para ir a WhatsApp", 
+                         text: "Clic aquí para abrir WhatsApp", 
                          isAction: true,
                          url: url,
                          sender: 'bot', 
@@ -104,12 +112,85 @@ export default function ChatWidget() {
                     }]);
 
                     // Intentar abrir automáticamente
-                    window.open(url, '_blank');
+                    // window.open(url, '_blank'); // Comentado para evitar bloqueo de popup
                 }, 1000);
 
-            }, 1500);
+            }, 1000);
         }, 1000);
     };
+
+    const processBotResponse = async (input) => {
+        const lowerInput = input.toLowerCase();
+        let botText = "";
+        let botAction = null;
+
+        // 1. Detección de intención: Búsqueda de Productos
+        if (lowerInput.includes("precio") || lowerInput.includes("busco") || lowerInput.includes("tienen") || lowerInput.includes("venden")) {
+            const searchTerm = input.replace(/precio/gi, "").replace(/busco/gi, "").replace(/tienen/gi, "").replace(/venden/gi, "").trim();
+            if (searchTerm.length > 2) {
+                try {
+                    const res = await axios.get(`/api/products?search=${searchTerm}&limit=3`);
+                    const products = res.data.data;
+
+                    if (products.length > 0) {
+                        botText = `He encontrado ${products.length} productos relacionados con "${searchTerm}":`;
+                         // Generate Product Cards
+                        const productCards = products.map(p => ({
+                            type: 'product',
+                            data: p
+                        }));
+                         // Add each card as a message (simplified for local state)
+                         setMessages(prev => [...prev, { 
+                            id: Date.now(), 
+                            text: botText, 
+                            sender: 'bot', 
+                            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+                        }, ...productCards.map((card, i) => ({
+                             id: Date.now() + i + 1,
+                             isProduct: true,
+                             product: card.data,
+                             sender: 'bot',
+                             time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                        }))]);
+                        return; // Exit here as we handled the response
+                    } else {
+                        botText = `Lo siento, no encontré productos que coincidan con "${searchTerm}". ¿Quieres intentar con otro nombre?`;
+                    }
+                } catch (err) {
+                    botText = "Tuve un problema consultando el catálogo. Inténtalo más tarde.";
+                }
+            } else {
+                botText = "¿Qué producto estás buscando específicamente?";
+            }
+        } 
+        
+        // 2. Detección de Ubicación
+        else if (lowerInput.includes("ubicacion") || lowerInput.includes("donde estas") || lowerInput.includes("direccion") || lowerInput.includes("tienda")) {
+            botText = "Nuestra tienda principal está en Av. Tecnológico #123, Ciudad Industrial. Abrimos de Lunes a Viernes de 8am a 7pm.";
+        }
+
+        // 3. Detección de Contacto Humano
+        else if (lowerInput.includes("humano") || lowerInput.includes("persona") || lowerInput.includes("asesor")) {
+             connectToSmartAgent("Solicito hablar con soporte.");
+             return;
+        }
+
+        // 4. Saludos / Default
+        else if (lowerInput.includes("hola") || lowerInput.includes("buenos dias")) {
+            botText = "¡Hola! ¿En qué puedo ayudarte hoy?";
+        }
+        else {
+            botText = "No estoy seguro de entender. Puedes preguntarme por precios ('precio de cemento'), ubicación o pedir hablar con un humano.";
+        }
+
+        // Default Response Pusher
+        setMessages(prev => [...prev, { 
+            id: Date.now(), 
+            text: botText, 
+            sender: 'bot', 
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+        }]);
+    }
 
     const handleOptionClick = (option) => {
         // Enviar selección como mensaje del usuario
@@ -119,62 +200,41 @@ export default function ChatWidget() {
         setIsTyping(true);
 
         setTimeout(() => {
-            let botResponse = "";
-
-            switch(option.id) {
-                case 'stock':
-                    botResponse = "Entendido. Buscando un especialista en inventarios.";
-                    break;
-                case 'order':
-                    botResponse = "Claro, transfiriendo tu caso a logística.";
-                    break;
-                case 'quote':
-                     botResponse = "Excelente. Te pasaré con un ejecutivo de ventas.";
-                    break;
-                default:
-                    botResponse = "Entendido, te contacto con un humano de inmediato.";
+            if (option.id === 'human') {
+                connectToSmartAgent("Solicito soporte humano desde opciones.");
+            } else if (option.id === 'stock') {
+                setMessages(prev => [...prev, { 
+                    id: Date.now(), text: "Escribe el nombre del producto que buscas (ej: 'precio de taladro')", sender: 'bot', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+                }]);
+            } else if (option.id === 'location') {
+                processBotResponse("ubicacion");
+            } else {
+                 setMessages(prev => [...prev, { 
+                    id: Date.now(), text: "Esa función está en mantenimiento, pero puedo conectarte con un asesor.", sender: 'bot', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+                }]);
             }
-
-            const botMsg = { 
-                id: Date.now() + 1, 
-                text: botResponse, 
-                sender: 'bot', 
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
-            };
-            
-            setMessages(prev => [...prev, botMsg]);
-            
-            // Iniciar proceso de conexión
-            connectToSmartAgent(`Hola ${option.text}, requiero apoyo.`);
-
+            setIsTyping(false);
         }, 1000);
     };
 
-    const handleSend = (e) => {
+    const handleSend = async (e) => {
         e.preventDefault();
         if (!inputValue.trim()) return;
 
-        // User Message (Show immediately)
-        const userMsg = { id: Date.now(), text: inputValue, sender: 'user', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+        // User Message
+        const originalText = inputValue;
+        const userMsg = { id: Date.now(), text: originalText, sender: 'user', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
         setMessages(prev => [...prev, userMsg]);
         
-        const originalText = inputValue;
         setInputValue("");
         setShowOptions(false);
         setIsTyping(true);
 
-        // WhatsApp Redirection Simulation
-        setTimeout(() => {
-            const botMsg = { 
-                id: Date.now() + 1, 
-                text: "Gracias por tu mensaje. Buscaremos al agente más adecuado para responderte...", 
-                sender: 'bot', 
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
-            };
-            setMessages(prev => [...prev, botMsg]);
-            
-            connectToSmartAgent(`Hola, escribo desde el chat web: "${originalText}"`);
-        }, 1000);
+        // Process AI Response
+        setTimeout(async () => {
+            await processBotResponse(originalText);
+            setIsTyping(false);
+        }, 800);
     };
 
     return (
@@ -184,7 +244,7 @@ export default function ChatWidget() {
             {isOpen && (
                 <div style={{
                     width: '350px',
-                    height: '450px',
+                    height: '500px',
                     background: 'white',
                     borderRadius: '12px',
                     boxShadow: '0 5px 25px rgba(0,0,0,0.15)',
@@ -217,7 +277,7 @@ export default function ChatWidget() {
                                 justifyContent: 'center', 
                                 fontWeight: 'bold'
                             }}>
-                                SC
+                                🤖
                             </div>
                             <div style={{
                                 position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', 
@@ -228,11 +288,11 @@ export default function ChatWidget() {
                         </div>
                         <div style={{flex: 1}}>
                             <div style={{fontWeight: 'bold', fontSize: '15px'}}>
-                                {isBusinessOpen ? 'Soporte WhatsApp' : 'Fuera de Horario'}
+                                {isBusinessOpen ? 'Asistente Virtual' : 'Fuera de Horario'}
                             </div>
                             <div style={{fontSize: '11px', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '4px'}}>
                                 {!isBusinessOpen && <Clock size={10} />}
-                                {isBusinessOpen ? 'Tiempo de respuesta: ~2 min' : 'L-V 8am-7pm | Sab 9am-2pm'}
+                                {isBusinessOpen ? 'En Línea' : 'Respuestas con IA'}
                             </div>
                         </div>
                         <button onClick={() => setIsOpen(false)} style={{background:'none', border:'none', color:'white', cursor:'pointer'}}>
@@ -253,7 +313,7 @@ export default function ChatWidget() {
                         {messages.map(msg => (
                             <div key={msg.id} style={{
                                 alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                                maxWidth: '80%'
+                                maxWidth: '85%'
                             }}>
                                 <div style={{
                                     padding: '10px 14px',
@@ -285,6 +345,18 @@ export default function ChatWidget() {
                                             }}>
                                                 Continuar en WhatsApp 🔗
                                             </a>
+                                        </div>
+                                    ) : msg.isProduct ? (
+                                        <div 
+                                            onClick={() => { navigate(`/product/${msg.product.id}`); setIsOpen(false); }}
+                                            style={{cursor:'pointer', display:'flex', gap:'10px', alignItems:'start'}}
+                                        >
+                                            <img src={(msg.product.images && msg.product.images[0]) || ''} style={{width:'40px', height:'40px', objectFit:'cover', borderRadius:'4px'}} />
+                                            <div>
+                                                <div style={{fontWeight:'bold', fontSize:'13px'}}>{msg.product.title}</div>
+                                                <div style={{color:'#166534', fontWeight:'bold'}}>${msg.product.price_base}</div>
+                                                <button style={{marginTop:'5px', background:'#6a1b3d', color:'white', border:'none', fontSize:'10px', padding:'2px 8px', borderRadius:'10px', cursor:'pointer'}}>Ver Detalles</button>
+                                            </div>
                                         </div>
                                     ) : (
                                         msg.text
