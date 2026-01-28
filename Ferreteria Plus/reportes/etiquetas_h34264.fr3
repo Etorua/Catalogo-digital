@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TfrxReport Version="4.6.8" DotMatrixReport="False" IniFile="\Software\Fast Reports" PreviewOptions.Buttons="3441" PreviewOptions.Zoom="1" PrintOptions.Printer="Por defecto" PrintOptions.PrintOnSheet="0" ReportOptions.CreateDate="39892,4236215972" ReportOptions.Description.Text="" ReportOptions.LastChange="39892,6253153935" ScriptLanguage="PascalScript" ScriptText.Text="&#13;&#10;begin&#13;&#10;&#13;&#10;end." PropData="044C656674022503546F7003460108446174617365747301010C3200000020446174615365743D227461626C612E6D656D4261727261734453582220446174615365744E616D653D22626172726173220000095661726961626C65730100055374796C650100">
+  <TfrxDataPage Name="Data" Height="1000" Left="0" Top="0" Width="1000"/>
+  <TfrxReportPage Name="Page1" PaperWidth="210" PaperHeight="297" PaperSize="9" LeftMargin="8" RightMargin="8" TopMargin="13" BottomMargin="12" ColumnWidth="0" ColumnPositions.Text="" HGuides.Text="" VGuides.Text="">
+    <TfrxMasterData Name="MasterData1" Height="63,87401575" Left="0" Top="18,89765" Width="733,22882" Columns="4" ColumnWidth="183,307086614173" ColumnGap="0" DataSet="tabla.memBarrasDSX" DataSetName="barras" RowCount="0">
+      <TfrxBarCodeView Name="CodigoBarra" Left="25,45671" Top="2,55906" Width="129" Height="37,7953" ShowHint="False" BarType="bcCode39" DataField="Codigo" DataSet="tabla.memBarrasDSX" DataSetName="barras" Expression="1234" Rotation="0" Text="12345678" WideBarRatio="2" Zoom="1"/>
+      <TfrxMemoView Name="barrasDescripcion" Left="4,55906" Top="40,91342" Width="173,85838" Height="18,89765" ShowHint="False" DataField="Descripcion" DataSet="tabla.memBarrasDSX" DataSetName="barras" Font.Charset="1" Font.Color="-2147483640" Font.Height="-9" Font.Name="tahoma" Font.Style="0" ParentFont="False" Text="[barras.&#34;Descripcion&#34;]"/>
+    </TfrxMasterData>
+  </TfrxReportPage>
+</TfrxReport>

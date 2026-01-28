@@ -43,6 +43,21 @@ router.post('/auth/register', async (req, res) => {
 // Login
 router.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
+
+    // 1. Fallback / Rescue for Hardcoded Admin (Always available)
+    if (email === 'admin@erp.com' && password === 'admin123') {
+        return res.json({ 
+            success: true, 
+            user: { 
+                id: 0,
+                name: 'Administrador ERP', 
+                email: email, 
+                role: 'admin',
+                tier: 'platinum'
+            }
+        });
+    }
+
     try {
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         
@@ -61,24 +76,11 @@ router.post('/auth/login', async (req, res) => {
             }
         }
 
-        // Fallback for Hardcoded Admin (if not in DB yet)
-        if (email === 'admin@erp.com' && password === 'admin123') {
-            return res.json({ 
-                success: true, 
-                user: { 
-                    id: 0,
-                    name: 'Administrador ERP', 
-                    email: email, 
-                    role: 'admin',
-                    tier: 'platinum'
-                }
-            });
-        } 
-
         res.status(401).json({ success: false, msg: 'Credenciales inválidas' });
     } catch (err) {
         console.error(err);
-        res.status(500).send('Server Error');
+        // Do not crash for login, just return error
+        res.status(500).json({ success: false, msg: 'Error de servidor: ' + err.message });
     }
 });
 

@@ -29,16 +29,11 @@ function Home({ onNotify }) {
         { id: 5, name: 'IZTAPALAPA #8747', status: 'Abierto', hours: 'Cierra a las 10:00 p.m.', address: 'Calz. Ermita Iztapalapa #2891, Col. Iztapalapa, C.P. 09310', phone: '(55) 9123 0000' }
     ]
 
-    const promotions = [
-        { id: 1, title: 'Pisos', tag: 'Hasta 15% de ahorro', image: 'https://images.unsplash.com/photo-1501045661006-fcebe0257c3f?q=80&w=1200&auto=format&fit=crop' },
-        { id: 2, title: 'Baños', tag: 'Hasta 40% de ahorro', image: 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad6?q=80&w=1200&auto=format&fit=crop' },
-        { id: 3, title: 'Calentadores de Agua', tag: 'Hasta 25% de ahorro', image: 'https://images.unsplash.com/photo-1545243424-0ce743321e11?q=80&w=1200&auto=format&fit=crop' },
-        { id: 4, title: 'Refrigeradores', tag: 'Hasta 45% de ahorro', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=1200&auto=format&fit=crop' },
-        { id: 5, title: 'Lavandería', tag: 'Hasta 45% de ahorro', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=1200&auto=format&fit=crop' },
-        { id: 6, title: 'Cajas', tag: '4x3', image: 'https://images.unsplash.com/photo-1487014679447-9f8336841d58?q=80&w=1200&auto=format&fit=crop' },
-        { id: 7, title: 'Herramientas', tag: 'Producto gratis', image: 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?q=80&w=1200&auto=format&fit=crop' },
-        { id: 8, title: 'Pintura', tag: 'Producto gratis', image: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop' }
-    ]
+    // CMS States
+    const [marketing, setMarketing] = useState({ 
+        home_hero_banner: null, 
+        home_promotions: [] 
+    });
 
   const query = searchParams.get('q') || ''
   const category = searchParams.get('cat') || ''
@@ -61,11 +56,20 @@ function Home({ onNotify }) {
     // Cargar productos y categorías en paralelo
     Promise.all([
         axios.get(`/api/products?${params}`),
-        axios.get('/api/categories')
-    ]).then(([resProducts, resCats]) => {
+        axios.get('/api/categories'),
+        axios.get('/api/marketing?publicOnly=true')
+    ]).then(([resProducts, resCats, resMarketing]) => {
         setProducts(resProducts.data.data) // Datos paginados
         setPagination(resProducts.data.pagination) // Metadatos
         setCategories(resCats.data)
+        
+        // Process Marketing blocks
+        const mData = {};
+        resMarketing.data.forEach(m => {
+             mData[m.slug] = m;
+        });
+        setMarketing(mData);
+
         setLoading(false)
     }).catch(err => {
         console.error("Error", err)
@@ -130,9 +134,10 @@ function Home({ onNotify }) {
       <div className="hero-carousel" style={{
           width: '100%', 
           height: '320px', 
-          background: 'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2670&auto=format&fit=crop)', 
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${marketing.home_hero_banner?.image_url || 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2670&auto=format&fit=crop'})`, 
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           marginBottom: '25px',
           display: 'flex',
           alignItems: 'center',
@@ -160,16 +165,20 @@ function Home({ onNotify }) {
                     fontFamily: 'Arial Black, Gadget, sans-serif',
                     letterSpacing: '-2px'
                 }}>
-                    SOMOS<br/>
-                    <span style={{
-                        color: 'transparent', 
-                        WebkitTextStroke: '2px white',
-                    }}>ORGULLOSOS</span><br/>
-                    PROVEEDORES
+                    {marketing.home_hero_banner?.title ? marketing.home_hero_banner.title : (
+                        <>
+                        SOMOS<br/>
+                        <span style={{
+                            color: 'transparent', 
+                            WebkitTextStroke: '2px white',
+                        }}>ORGULLOSOS</span><br/>
+                        PROVEEDORES
+                        </>
+                    )}
                 </h2>
                 
                 <div className="hero-announcement">
-                  Compra ahora y paga en abril 2026 · Promociones bancarias vigentes
+                  {marketing.home_hero_banner?.content?.subtitle || 'Compra ahora y paga en abril 2026 · Promociones bancarias vigentes'}
                 </div>
 
                 <div style={{marginTop: '25px', display: 'inline-flex', alignItems: 'center', gap: '20px', background: 'rgba(0,0,0,0.7)', padding: '10px 20px', borderRadius: '50px', border: '1px solid #555'}}>
@@ -194,13 +203,16 @@ function Home({ onNotify }) {
             <div style={{margin: '10px 0 30px'}}>
                 <h2 style={{margin: '0 0 15px', fontSize: '18px'}}>Las Mejores Promociones</h2>
                 <div className="promos-grid">
-                    {promotions.map(promo => (
-                        <div className="promo-card" key={promo.id}>
+                    {(marketing.home_promotions?.content || []).map((promo, idx) => (
+                        <div className="promo-card" key={idx}>
                             <div className="promo-badge">{promo.tag}</div>
-                            <img src={promo.image} alt={promo.title} />
+                            <img src={promo.image} alt={promo.title || 'Promo'} />
                             <div className="promo-title">{promo.title}</div>
                         </div>
                     ))}
+                    {(!marketing.home_promotions?.content || marketing.home_promotions.content.length === 0) && (
+                        <div style={{color:'#666', fontStyle:'italic'}}>No hay promociones activas</div>
+                    )}
                 </div>
             </div>
 

@@ -144,12 +144,22 @@ router.get('/:id', async (req, res) => {
 // 4. Crear Producto
 router.post('/', async (req, res) => {
     try {
-        const { sku, title, description, stock, price_base, category, images, is_best_price, is_featured } = req.body;
+        const { 
+            sku, title, description, stock, price_base, category, images, is_best_price, is_featured,
+            brand, barcode, location, cost_price, stock_min, stock_max, rubro, unit, tax_rate, supplier_code, weight
+        } = req.body;
         
         const result = await pool.query(
-            `INSERT INTO products (sku, title, description, stock, price_base, category, images,lead_score, is_best_price, is_featured) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 5, $8, $9) RETURNING *`,
-            [sku, title, description, stock, price_base, category, images, is_best_price || false, is_featured || false]
+            `INSERT INTO products (
+                sku, title, description, stock, price_base, category, images, lead_score, is_best_price, is_featured,
+                brand, barcode, location, cost_price, stock_min, stock_max, rubro, unit, tax_rate, supplier_code, weight
+            ) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 5, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
+            [
+                sku, title, description, stock || 0, price_base, category, images, is_best_price || false, is_featured || false,
+                brand || null, barcode || null, location || '', cost_price || 0, stock_min || 0, stock_max || 1000, rubro || 'General', 
+                unit || 'un', tax_rate || 0, supplier_code || '', weight || 0
+            ]
         );
         res.json(result.rows[0]);
     } catch (err) {
@@ -162,7 +172,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { sku, title, description, stock, price_base, category, images, is_best_price, is_featured } = req.body;
+        const { 
+            sku, title, description, stock, price_base, category, images, is_best_price, is_featured,
+            brand, barcode, location, cost_price, stock_min, stock_max, rubro, unit, tax_rate, supplier_code, weight
+        } = req.body;
         
         const result = await pool.query(
             `UPDATE products SET 
@@ -174,9 +187,24 @@ router.put('/:id', async (req, res) => {
                 category = COALESCE($6, category), 
                 images = COALESCE($7, images),
                 is_best_price = COALESCE($8, is_best_price),
-                is_featured = COALESCE($9, is_featured)
-             WHERE id = $10 RETURNING *`,
-            [sku, title, description, stock, price_base, category, images, is_best_price, is_featured, id]
+                is_featured = COALESCE($9, is_featured),
+                brand = COALESCE($10, brand),
+                barcode = COALESCE($11, barcode),
+                location = COALESCE($12, location),
+                cost_price = COALESCE($13, cost_price),
+                stock_min = COALESCE($14, stock_min),
+                stock_max = COALESCE($15, stock_max),
+                rubro = COALESCE($16, rubro),
+                unit = COALESCE($17, unit),
+                tax_rate = COALESCE($18, tax_rate),
+                supplier_code = COALESCE($19, supplier_code),
+                weight = COALESCE($20, weight)
+             WHERE id = $21 RETURNING *`,
+            [
+                sku, title, description, stock, price_base, category, images, is_best_price, is_featured,
+                brand, barcode, location, cost_price, stock_min, stock_max, rubro, unit, tax_rate, supplier_code, weight,
+                id
+            ]
         );
         
         if (result.rows.length === 0) {

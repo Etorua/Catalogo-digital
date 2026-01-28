@@ -106,4 +106,62 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Crear Venta POS
+router.post('/create_pos', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { items, total, customer_name, payment_method } = req.body;
+
+        await client.query('BEGIN');
+
+        // 1. Crear Orden (Status completed)
+        const orderResult = await client.query(
+            `INSERT INTO orders (total, status, customer_name, shipping_address, created_at) 
+             VALUES ($1, 'completed', $2, $3, NOW()) RETURNING id`,
+            [total, customer_name, `Venta Mostrador (${payment_method})`]
+        );
+        const orderId = orderResult.rows[0].id;
+
+        // 2. Crear Items y Descontar Stock
+        for (const item of items) {
+             const subtotal = item.price * item.quantity;
+             await client.query(
+                 `INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
+                  VALUES ($1, $2, $3, $4, $5)`,
+                 [orderId, item.id, item.quantity, item.price, subtotal]
+             );
+             
+             // Descontar stock
+             await client.query(
+                 `UPDATE products SET stock = stock - $1 WHERE id = $2`,
+                 [item.quantity, item.id]
+             );
+        }
+
+        // 3. Registrar en Caja si es Efectivo (o registrar todo para historial)
+        // Para control de efectivo físico, solo sumamos si es Efectivo.
+        if (['Efectivo', 'cash', 'Cash', 'efectivo'].includes(payment_method)) {
+             const regRes = await client.query("SELECT id FROM cash_registers WHERE status = 'open' ORDER BY id DESC LIMIT 1");
+             if (regRes.rows.length > 0) {
+                 const regId = regRes.rows[0].id;
+                 await client.query(
+                     `INSERT INTO cash_movements (register_id, type, amount, description, order_id, created_at)
+                      VALUES ($1, 'sale', $2, $3, $4, NOW())`,
+                     [regId, total, `Venta #${orderId} - ${customer_name}`, orderId]
+                 );
+             }
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({ msg: 'Venta registrada', orderId });
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error en POS:', err.message);
+        res.status(500).send('Server Error: ' + err.message);
+    } finally {
+        client.release();
+    }
+});
+
 module.exports = router;
