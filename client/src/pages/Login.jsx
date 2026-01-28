@@ -114,9 +114,8 @@ function Login({ onLogin }) {
                                 Iniciar sesión
                             </button>
                             
-                            <div style={{marginTop: '20px', fontSize: '14px', opacity: '0.9', display: 'flex', justifyContent: 'space-between'}}>
+                            <div style={{marginTop: '20px', fontSize: '14px', opacity: '0.9', display: 'flex', justifyContent: 'center'}}>
                                 <span style={{cursor:'pointer', textDecoration:'underline'}}>Recuperar Contraseña</span>
-                                <span onClick={() => navigate('/register')} style={{cursor:'pointer', fontWeight:'bold', color: 'white', background:'rgba(255,255,255,0.2)', padding:'2px 8px', borderRadius:'4px'}}>Crear Cuenta Nueva</span>
                             </div>
                         </form>
                     </div>

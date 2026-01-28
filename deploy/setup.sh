@@ -30,23 +30,42 @@ psql -h localhost -U catalog_user -d catalog_db -f server/update_orders_schema.s
 psql -h localhost -U catalog_user -d catalog_db -f server/update_marketing_schema.sql || true
 psql -h localhost -U catalog_user -d catalog_db -f server/update_users_schema.sql || true
 psql -h localhost -U catalog_user -d catalog_db -f server/update_fiscal_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_clients_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_suppliers_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_cash_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_inventory_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_promotions_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_pro_requests.sql || true
 
 # Seed Data (New Products)
 echo "Seeding Products..."
 cd server
 npm install
 DB_USER=catalog_user DB_PASSWORD=catalog_password DB_NAME=catalog_db DB_HOST=localhost node seed_products.js || true
+DB_USER=catalog_user DB_PASSWORD=catalog_password DB_NAME=catalog_db DB_HOST=localhost node init_pages.js || true
+
+# Build Client
+echo "Building Client..."
+cd ../client
+npm install
+npm run build
+cd ..
 
 # Setup Backend
 # (Already in server folder)
-# npm install (Already done above)
-# Update .env or use environment variables in PM2
+cd server 
+# npm install (Already done above via seed_products.js logic, but lets be safe)
 npm install
-# Update .env or use environment variables in PM2
 # Start API
 pm2 delete api || true
 DB_USER=catalog_user DB_PASSWORD=catalog_password DB_NAME=catalog_db DB_HOST=localhost pm2 start index.js --name "api"
 cd ..
+
+# Setup Nginx
+echo "Configuring Nginx..."
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/default
+sudo systemctl restart nginx
+
 
 # Setup Frontend
 cd client

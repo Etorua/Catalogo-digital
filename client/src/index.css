@@ -15,6 +15,18 @@
   --primary-dark: #4a122a;
   --text-white: #ffffff;
   --sidebar-width: 260px;
+  
+  /* Missing Variables Fix */
+  --btn-primary: #f96302;
+  --btn-hover: #d85502;
+  --text-dark: #1f2937;
+  --text-light: #6b7280;
+  --bg-color: #ffffff;
+  --link-color: #f96302;
+  --accent-color: #f96302;
+  --success-green: #16a34a;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
 }
 
 body {

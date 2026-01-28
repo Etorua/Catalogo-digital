@@ -32,22 +32,34 @@ router.get('/:slug', async (req, res) => {
     }
 });
 
-// PUT Update Block
+// PUT Update Block (Upsert)
 router.put('/:slug', async (req, res) => {
     try {
         const { slug } = req.params;
         const { title, image_url, target_link, content, is_active } = req.body;
         
-        const result = await pool.query(
-            `UPDATE marketing_blocks 
-             SET title=$1, image_url=$2, target_link=$3, content=$4, is_active=$5 
-             WHERE slug=$6 RETURNING *`,
-            [title, image_url, target_link, content, is_active, slug]
-        );
+        const check = await pool.query('SELECT * FROM marketing_blocks WHERE slug = $1', [slug]);
+        let result;
+        
+        if (check.rows.length === 0) {
+             result = await pool.query(
+                `INSERT INTO marketing_blocks (slug, title, image_url, target_link, content, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+                [slug, title, image_url, target_link, content, is_active || true]
+             );
+        } else {
+             result = await pool.query(
+                `UPDATE marketing_blocks 
+                 SET title=$1, image_url=$2, target_link=$3, content=$4, is_active=$5 
+                 WHERE slug=$6 RETURNING *`,
+                [title, image_url, target_link, content, is_active, slug]
+            );
+        }
         res.json(result.rows[0]);
     } catch (err) {
          console.error(err);
          res.status(500).json({error: 'Server error'});
+
     }
 });
 

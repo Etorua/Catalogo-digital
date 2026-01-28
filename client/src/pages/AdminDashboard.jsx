@@ -285,6 +285,11 @@ function AdminDashboard({ user }) {
         fetchProducts(); // Always fetch products for stats
         if (activeTab === 'cms') fetchPages();
         if (activeTab === 'marketing') fetchMarketing();
+        if (activeTab === 'promotions') {
+            fetchPromotions();
+            fetchPromoBanner();
+        }
+        if (activeTab === 'pro_requests') fetchProRequests();
         if (activeTab === 'users') fetchUsers();
         if (activeTab === 'orders') fetchOrders();
         if (activeTab === 'clients') fetchClients(); 
@@ -357,6 +362,70 @@ function AdminDashboard({ user }) {
         setEditingCampaign(camp);
         setMarketingFormData(camp);
     };
+
+    // --- Promotions Logic ---
+    const [promotions, setPromotions] = useState([]);
+    const [promoBanner, setPromoBanner] = useState({ title: '', content: '', image_url: '', target_link: '' });
+    const [editingPromo, setEditingPromo] = useState(null);
+    const [activePromoTab, setActivePromoTab] = useState('list'); // 'list' | 'banner'
+    const [promoFormData, setPromoFormData] = useState({
+        title: '', description: '', target_link: '', badge_text: '', badge_color: '#f96302', display_order: 0, is_active: true
+    });
+
+    const fetchPromotions = () => {
+        axios.get('/api/promotions?all=true').then(res => setPromotions(res.data)).catch(console.error);
+    };
+
+    const fetchPromoBanner = () => {
+         axios.get('/api/marketing/promo_main_banner')
+            .then(res => setPromoBanner(res.data || { title: '', content: '', image_url: '', target_link: '' }))
+            .catch(() => {});
+    };
+
+    const handleSavePromo = async (e) => {
+        e.preventDefault();
+        try {
+            if (editingPromo) {
+                await axios.put(`/api/promotions/${editingPromo.id}`, promoFormData);
+            } else {
+                await axios.post('/api/promotions', promoFormData);
+            }
+            fetchPromotions();
+            setEditingPromo(null);
+            setPromoFormData({ title: '', description: '', target_link: '', badge_text: '', badge_color: '#f96302', display_order: 0, is_active: true });
+            alert('Promoción guardada');
+        } catch (err) {
+            alert('Error guardando promoción');
+            console.error(err);
+        }
+    };
+
+    const handleEditPromo = (promo) => {
+        setEditingPromo(promo);
+        setPromoFormData(promo);
+    }
+
+    const handleSavePromoBanner = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.put('/api/marketing/promo_main_banner', { 
+                ...promoBanner,
+                slug: 'promo_main_banner' 
+            });
+            alert('Banner guardado');
+            fetchPromoBanner();
+        } catch (err) {
+            alert('Error guardando banner');
+        }
+    };
+    
+    // --- Contact Requests Logic ---
+    const [proRequests, setProRequests] = useState([]);
+    const fetchProRequests = () => {
+        axios.get('/api/contact/pro-requests').then(res => setProRequests(res.data)).catch(console.error);
+    };
+
+
 
     const handleDeleteCampaign = async (id) => {
         if(window.confirm('¿Eliminar campaña?')) {
@@ -608,6 +677,24 @@ function AdminDashboard({ user }) {
                             onClick={() => setActiveTab('suppliers')}
                         >
                             <Truck size={18} /> Proveedores
+                        </button>
+                    </li>
+
+                    <div className="menu-section-label">MARKETING</div>
+                     <li>
+                        <button 
+                            className={activeTab === 'promotions' ? 'active' : ''} 
+                            onClick={() => setActiveTab('promotions')}
+                        >
+                            <Megaphone size={18} /> Ofertas y Promos
+                        </button>
+                    </li>
+                     <li>
+                        <button 
+                            className={activeTab === 'pro_requests' ? 'active' : ''} 
+                            onClick={() => setActiveTab('pro_requests')}
+                        >
+                            <FileText size={18} /> Solicitudes Web
                         </button>
                     </li>
 
@@ -1244,6 +1331,168 @@ function AdminDashboard({ user }) {
                         </div>
                     )}
 
+                </div>
+            )}
+
+
+            {/* --- PROMOTIONS (PROMO CARDS) VIEW --- */}
+            {activeTab === 'promotions' && (
+                <div style={{gap: '30px', display:'flex', flexDirection:'column'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                        <h2>Gestión de Ofertas y Promociones</h2>
+                         <div style={{display:'flex', gap:'10px'}}>
+                            <button className={`secondary-btn ${activePromoTab === 'list' ? 'active' : ''}`} onClick={() => setActivePromoTab('list')}>Tarjetas Grid</button>
+                            <button className={`secondary-btn ${activePromoTab === 'banner' ? 'active' : ''}`} onClick={() => setActivePromoTab('banner')}>Banner Principal</button>
+                        </div>
+                    </div>
+
+                    {activePromoTab === 'banner' && (
+                        <div style={{background:'white', padding:'30px', borderRadius:'8px', boxShadow:'0 2px 5px rgba(0,0,0,0.05)'}}>
+                            <h3>Banner Principal de Liquidación</h3>
+                            <p style={{color:'#666', marginBottom:'20px'}}>Este banner aparece en grande en la página de Promociones.</p>
+                            <form onSubmit={handleSavePromoBanner} style={{display:'grid', gap:'20px', maxWidth:'600px'}}>
+                                <div style={formGroup}>
+                                    <label style={labelStyle}>Título Principal</label>
+                                    <input value={promoBanner.title || ''} onChange={e => setPromoBanner({...promoBanner, title: e.target.value})} style={inputStyle} placeholder="ej. GRAN LIQUIDACIÓN" />
+                                </div>
+                                <div style={formGroup}>
+                                    <label style={labelStyle}>Subtítulo / Contenido</label>
+                                    <textarea value={promoBanner.content || ''} onChange={e => setPromoBanner({...promoBanner, content: e.target.value})} style={{...inputStyle, height:'80px'}} placeholder="ej. Hasta 40% de descuento..." />
+                                </div>
+                                <div style={formGroup}>
+                                    <label style={labelStyle}>Imagen de Fondo (URL)</label>
+                                    <div style={{display:'flex', gap:'10px'}}>
+                                        <input value={promoBanner.image_url || ''} onChange={e => setPromoBanner({...promoBanner, image_url: e.target.value})} style={{...inputStyle, flex:1}} placeholder="http://..." />
+                                        <label className="secondary-btn" style={{padding:'10px', cursor:'pointer'}}>
+                                            Subir
+                                            <input type="file" style={{display:'none'}} accept="image/*" onChange={async (e) => {
+                                                const f = e.target.files[0];
+                                                if(!f) return;
+                                                const d = new FormData(); d.append('image', f);
+                                                try {
+                                                    const res = await axios.post('/api/upload', d, {headers: {'Content-Type': 'multipart/form-data'}});
+                                                    setPromoBanner({...promoBanner, image_url: `http://localhost:5000${res.data.url}`});
+                                                } catch(err) { alert('Error subiendo imagen'); }
+                                            }} />
+                                        </label>
+                                    </div>
+                                    {promoBanner.image_url && <img src={promoBanner.image_url} style={{marginTop:'10px', height:'100px', objectFit:'cover', borderRadius:'6px'}} />}
+                                </div>
+                                <div style={formGroup}>
+                                    <label style={labelStyle}>Enlace del Botón</label>
+                                    <input value={promoBanner.target_link || ''} onChange={e => setPromoBanner({...promoBanner, target_link: e.target.value})} style={inputStyle} placeholder="ej. /?category=Pinturas" />
+                                </div>
+                                <div style={formGroup}>
+                                    <button className="primary-btn">Guardar Banner</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {activePromoTab === 'list' && (
+                        <div style={{display:'grid', gridTemplateColumns:'1fr 350px', gap:'20px'}}>
+                            
+                            {/* List */}
+                            <div style={{background:'white', padding:'20px', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
+                                <h3 style={{marginTop:0, marginBottom:'20px'}}>Tarjetas Activas</h3>
+                                <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(250px, 1fr))', gap:'20px'}}>
+                                    {promotions.map(p => (
+                                        <div key={p.id} style={{border:'1px solid #eee', borderRadius:'8px', padding:'15px', position:'relative', background: p.is_active ? 'white' : '#f9f9f9'}}>
+                                            <div style={{position:'absolute', top:'10px', right:'10px', display:'flex', gap:'5px'}}>
+                                                <button onClick={() => handleEditPromo(p)} style={{background:'none', border:'none', cursor:'pointer', color:'#2563eb'}}><PenSquare size={16}/></button>
+                                                <button onClick={() => handleDeletePromo(p.id)} style={{background:'none', border:'none', cursor:'pointer', color:'#dc2626'}}><Trash2 size={16}/></button>
+                                            </div>
+                                            <span style={{background: p.badge_color, color:'white', fontSize:'10px', padding:'2px 6px', borderRadius:'10px', fontWeight:'bold'}}>{p.badge_text}</span>
+                                            <h4 style={{margin:'5px 0', color: p.is_active ? '#333' : '#999'}}>{p.title}</h4>
+                                            <p style={{fontSize:'12px', color:'#666', lineHeight:1.4}}>{p.description}</p>
+                                            <div style={{fontSize:'10px', color:'#999', marginTop:'10px'}}>Link: {p.target_link}</div>
+                                        </div>
+                                    ))}
+                                    {promotions.length === 0 && <p style={{color:'#999'}}>No hay promociones registradas.</p>}
+                                </div>
+                            </div>
+
+                            {/* Form */}
+                            <div style={{background:'white', padding:'20px', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', height:'fit-content'}}>
+                                <h3 style={{marginTop:0}}>{editingPromo ? 'Editar Tarjeta' : 'Nueva Tarjeta'}</h3>
+                                <form onSubmit={handleSavePromo} style={{display:'grid', gap:'15px'}}>
+                                    <div>
+                                        <label style={labelStyle}>Título</label>
+                                        <input required value={promoFormData.title} onChange={e => setPromoFormData({...promoFormData, title: e.target.value})} style={{...inputStyle, width:'100%', boxSizing:'border-box'}} />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Descripción</label>
+                                        <textarea required value={promoFormData.description} onChange={e => setPromoFormData({...promoFormData, description: e.target.value})} style={{...inputStyle, width:'100%', boxSizing:'border-box', height:'80px'}} />
+                                    </div>
+                                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>
+                                        <div>
+                                            <label style={labelStyle}>Badge Texto</label>
+                                            <input value={promoFormData.badge_text} onChange={e => setPromoFormData({...promoFormData, badge_text: e.target.value})} style={{...inputStyle, width:'100%', boxSizing:'border-box'}} placeholder="ej. -20%" />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Badge Color</label>
+                                            <input type="color" value={promoFormData.badge_color} onChange={e => setPromoFormData({...promoFormData, badge_color: e.target.value})} style={{...inputStyle, width:'100%', height:'42px', padding:'2px'}} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Link Destino</label>
+                                        <input value={promoFormData.target_link} onChange={e => setPromoFormData({...promoFormData, target_link: e.target.value})} style={{...inputStyle, width:'100%', boxSizing:'border-box'}} placeholder="/?category=..." />
+                                    </div>
+                                    <div>
+                                        <label style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer'}}>
+                                            <input type="checkbox" checked={promoFormData.is_active} onChange={e => setPromoFormData({...promoFormData, is_active: e.target.checked})} />
+                                            Activa
+                                        </label>
+                                    </div>
+                                    <div style={{display:'flex', gap:'5px'}}>
+                                        <button className="primary-btn" style={{flex:1}}>Guardar</button>
+                                        <button type="button" className="secondary-btn" onClick={() => {
+                                            setEditingPromo(null);
+                                            setPromoFormData({ title: '', description: '', target_link: '', badge_text: '', badge_color: '#f96302', display_order: 0, is_active: true });
+                                        }} style={{flex:1}}>Cancelar</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* --- PRO REQUESTS VIEW --- */}
+            {activeTab === 'pro_requests' && (
+                <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '20px'}}>
+                         <h2>Solicitudes de Clientes PRO</h2>
+                    </div>
+                    {proRequests.length === 0 ? <p style={{color:'#666'}}>No hay solicitudes pendientes.</p> : (
+                        <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
+                            <thead style={{background: '#f8fafc', borderBottom: '2px solid #e2e8f0'}}>
+                                <tr>
+                                    <th style={{padding:'12px', textAlign:'left'}}>Fecha</th>
+                                    <th style={{padding:'12px', textAlign:'left'}}>Nombre</th>
+                                    <th style={{padding:'12px', textAlign:'left'}}>Empresa</th>
+                                    <th style={{padding:'12px', textAlign:'left'}}>Email</th>
+                                    <th style={{padding:'12px', textAlign:'left'}}>Teléfono</th>
+                                    <th style={{padding:'12px', textAlign:'right'}}>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {proRequests.map(req => (
+                                    <tr key={req.id} style={{borderBottom:'1px solid #f1f5f9'}}>
+                                        <td style={{padding:'12px'}}>{new Date(req.created_at).toLocaleDateString()} {new Date(req.created_at).toLocaleTimeString()}</td>
+                                        <td style={{padding:'12px', fontWeight:'bold'}}>{req.full_name}</td>
+                                        <td style={{padding:'12px'}}>{req.company_name || '-'}</td>
+                                        <td style={{padding:'12px'}}>{req.email}</td>
+                                        <td style={{padding:'12px'}}>{req.phone}</td>
+                                        <td style={{padding:'12px', textAlign:'right'}}>
+                                            <a href={`mailto:${req.email}`} className="secondary-btn" style={{textDecoration:'none', fontSize:'12px'}}>Responder</a>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             )}
 

@@ -1,12 +1,28 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 function ProSales() {
     const [formData, setFormData] = useState({ name: '', company: '', email: '', phone: '' });
+    const [status, setStatus] = useState('idle'); // idle, loading, success, error
 
-    const handleSubmit = (e) => {
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        alert('Gracias por tu interés. Un asesor profesional te contactará pronto.');
-        // In a real app, this would use the notification system or API
+        setStatus('loading');
+        
+        try {
+            const res = await axios.post('/api/contact/pro-request', formData);
+            if (res.data.success) {
+                setStatus('success');
+                setFormData({ name: '', company: '', email: '', phone: '' });
+            }
+        } catch (err) {
+            console.error(err);
+            setStatus('error');
+        }
     };
 
     return (
@@ -20,28 +36,46 @@ function ProSales() {
 
             <div style={{ background: '#f5f5f5', padding: '2rem', borderRadius: '8px' }}>
                 <h2 style={{ marginBottom: '1.5rem', color: '#f96302' }}>Solicita tu cuenta PRO</h2>
+                
+                {status === 'success' && (
+                    <div style={{ background: '#dcfce7', color: '#166534', padding: '1rem', borderRadius: '4px', marginBottom: '1rem', fontWeight: 'bold' }}>
+                        ✅ ¡Solicitud enviada! Un asesor te contactará en breve.
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
                     <div>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Nombre Completo</label>
-                        <input type="text" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
+                        <input name="name" value={formData.name} onChange={handleChange} type="text" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
                     </div>
                     <div>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Empresa / Razón Social</label>
-                        <input type="text" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
+                        <input name="company" value={formData.company} onChange={handleChange} type="text" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Correo Electrónico</label>
-                            <input type="email" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
+                            <input name="email" value={formData.email} onChange={handleChange} type="email" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
                         </div>
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Teléfono</label>
-                            <input type="tel" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
+                            <input name="phone" value={formData.phone} onChange={handleChange} type="tel" style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '4px' }} required />
                         </div>
                     </div>
-                    <button type="submit" style={{ background: '#f96302', color: 'white', border: 'none', padding: '1rem', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer', marginTop: '1rem' }}>
-                        Solicitar Información
+                    <button 
+                        type="submit" 
+                        disabled={status === 'loading'}
+                        style={{ 
+                            background: status === 'loading' ? '#ccc' : '#f96302', 
+                            color: 'white', border: 'none', padding: '1rem', 
+                            fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '4px', 
+                            cursor: status === 'loading' ? 'not-allowed' : 'pointer', 
+                            marginTop: '1rem' 
+                        }}
+                    >
+                        {status === 'loading' ? 'Enviando...' : 'Solicitar Información'}
                     </button>
+                    {status === 'error' && <p style={{color: 'red', marginTop: '10px'}}>Hubo un error al enviar tu solicitud. Intenta de nuevo.</p>}
                 </form>
             </div>
 

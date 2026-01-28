@@ -26,6 +26,8 @@ app.use('/api/cash', require('./routes/cash'));
 app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/pages', require('./routes/cms'));
+app.use('/api/contact', require('./routes/contact')); // Rutas de contacto y formularios
+app.use('/api/promotions', require('./routes/promotions')); // Rutas de tarjetas de promoción
 app.use('/api', require('./routes/users')); // Handles /auth and /admin endpoints
 
 app.listen(PORT, () => {

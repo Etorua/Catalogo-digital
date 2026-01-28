@@ -26,7 +26,7 @@ function App() {
   const location = useLocation();
 
   // Rutas donde NO queremos mostrar el Header/Footer estándar
-  const isStandalonePage = location.pathname.startsWith('/admin') || location.pathname === '/login' || location.pathname === '/register';
+  const isStandalonePage = location.pathname.startsWith('/admin') || location.pathname === '/login';
 
   const showNotification = (message, type = 'info') => {
       setNotification({ message, type });
@@ -76,6 +76,25 @@ function App() {
           </div>
 
           <div className="user-controls">
+            {!user && (
+                <Link to="/register" style={{
+                    textDecoration:'none', 
+                    background:'#f96302', 
+                    color:'white', 
+                    padding:'6px 16px', 
+                    borderRadius:'20px', 
+                    fontWeight:'bold', 
+                    fontSize:'13px', 
+                    marginRight:'15px',
+                    display:'flex',
+                    alignItems:'center',
+                    gap:'5px',
+                    whiteSpace: 'nowrap'
+                }}>
+                   <span>🚀</span> Cuenta PRO
+                </Link>
+            )}
+
             <div className="user-action" onClick={(e) => !user && handleNavClick(e, 'Mi Cuenta Detallado')}>
                 <div style={{color: '#f96302', fontSize: '24px', textAlign: 'center'}}>👤</div>
                 {user ? (
