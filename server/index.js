@@ -28,6 +28,7 @@ app.use('/api/upload', require('./routes/upload'));
 app.use('/api/pages', require('./routes/cms'));
 app.use('/api/contact', require('./routes/contact')); // Rutas de contacto y formularios
 app.use('/api/promotions', require('./routes/promotions')); // Rutas de tarjetas de promoción
+app.use('/api/chatbot', require('./routes/chatbot')); // Rutas del Chatbot Manager
 app.use('/api', require('./routes/users')); // Handles /auth and /admin endpoints
 
 app.listen(PORT, () => {

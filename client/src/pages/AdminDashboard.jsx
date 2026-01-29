@@ -33,8 +33,10 @@ import {
     UserCog
 } from 'lucide-react';
 
+import ChatbotManager from './ChatbotManager';
+
 function AdminDashboard({ user }) {
-    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'pos' | 'inventory' | 'clients' | 'suppliers' | 'cash' | 'reports' | 'settings'
+    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'pos' | 'inventory' | 'clients' | 'suppliers' | 'cash' | 'reports' | 'settings' | 'chatbot'
     const navigate = useNavigate();
     const date = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -725,6 +727,14 @@ function AdminDashboard({ user }) {
                             <Settings size={18} /> Configuración
                         </button>
                     </li>
+                    <li>
+                         <button 
+                            className={activeTab === 'chatbot' ? 'active' : ''} 
+                            onClick={() => setActiveTab('chatbot')}
+                        >
+                            <Users size={18} /> Chatbot IA
+                        </button>
+                    </li>
                 </ul>
                 <style>{`
                     .menu-section-label {
@@ -764,6 +774,7 @@ function AdminDashboard({ user }) {
                             {activeTab === 'cash' && <span key="cash">Control de Caja</span>}
                             {activeTab === 'reports' && <span key="reports">Reportes y Estadísticas</span>}
                             {activeTab === 'settings' && <span key="settings">Configuración del Sistema</span>}
+                            {activeTab === 'chatbot' && <span key="chatbot">Entrenamiento de Chatbot</span>}
                         </h1>
                     </div>
                     <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
@@ -1038,6 +1049,8 @@ function AdminDashboard({ user }) {
                      </div>
                  )}
                  
+                 {activeTab === 'chatbot' && <ChatbotManager />}
+
                  {/* --- SETTINGS --- */}
                  {activeTab === 'settings' && (
                      <div style={{padding:'20px'}}>

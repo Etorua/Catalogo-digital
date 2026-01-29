@@ -161,8 +161,8 @@ function App() {
       
       {!isStandalonePage && <Footer onSubscribe={showNotification} />}
       
-      {/* Global Chat Widget */}
-      <ChatWidget />
+      {/* Global Chat Widget - Hidden on Admin/Login pages */}
+      {!isStandalonePage && <ChatWidget />}
     </div>
   )
 }

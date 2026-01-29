@@ -28,6 +28,7 @@ psql -h localhost -U catalog_user -d catalog_db -f server/database.sql || true
 echo "Applying Migrations..."
 psql -h localhost -U catalog_user -d catalog_db -f server/update_orders_schema.sql || true
 psql -h localhost -U catalog_user -d catalog_db -f server/update_marketing_schema.sql || true
+psql -h localhost -U catalog_user -d catalog_db -f server/update_chatbot_schema.sql || true
 psql -h localhost -U catalog_user -d catalog_db -f server/update_users_schema.sql || true
 psql -h localhost -U catalog_user -d catalog_db -f server/update_fiscal_schema.sql || true
 psql -h localhost -U catalog_user -d catalog_db -f server/update_clients_schema.sql || true
