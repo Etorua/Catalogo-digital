@@ -65,7 +65,7 @@ Remove-Item "deploy_package.zip"
 Write-Host "Running remote setup..."
 # We use a single line command to avoid CRLF issues in the SSH command string itself.
 # We also install dos2unix to fix the uploaded script line endings.
-$SCRIPT = "cd $REMOTE_DIR; sudo apt-get update; sudo apt-get install -y unzip dos2unix; unzip -o deploy_package.zip; find . -type f -name '*.sh' -exec dos2unix {} \;; chmod +x deploy/setup.sh; sudo ./deploy/setup.sh"
+$SCRIPT = "cd $REMOTE_DIR; sudo apt-get update; sudo apt-get install -y unzip dos2unix; unzip -o deploy_package.zip; find . -type f -name '*.sh' -exec dos2unix {} \;; chmod +x deploy/update_app.sh; sudo ./deploy/update_app.sh"
 
 ssh -i $PEM_FILE $USER@$SERVER_IP $SCRIPT
 

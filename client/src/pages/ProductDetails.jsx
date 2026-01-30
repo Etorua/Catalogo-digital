@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
 import { useCart } from '../context/CartContext.jsx'
+import { Star, Heart } from 'lucide-react'
 
 function ProductDetails({ onNotify }) {
   const { id } = useParams()
@@ -82,8 +83,9 @@ function ProductDetails({ onNotify }) {
             <div className="sku-header" style={{display:'flex', gap:'10px', alignItems:'center', marginBottom:'20px'}}>
                  <span style={{fontSize:'12px', fontWeight:'bold'}}>SKU:</span>
                  <span className="sku" style={{fontSize:'12px', color:'#666'}}>{product.sku}</span>
-                 <div style={{display:'flex', gap:'2px'}}>
-                    {'★★★★☆'.split('').map(s=><span key={Math.random()} style={{color:'#f96302', fontSize:'14px'}}>{s}</span>)}
+                 <div style={{display:'flex', gap:'2px', alignItems: 'center'}}>
+                    {[...Array(4)].map((_, i) => <Star key={i} size={14} fill="#f96302" color="#f96302" />)}
+                    <Star size={14} color="#f96302" />
                     <span style={{fontSize:'12px', color:'#0284c7', marginLeft:'5px'}}>(24 Opiniones)</span>
                  </div>
             </div>
@@ -126,8 +128,8 @@ function ProductDetails({ onNotify }) {
                         Agregar al Carrito
                     </button>
                 </div>
-                 <button className="secondary-btn" style={{width: '100%', padding: '12px', cursor: 'pointer', fontSize:'14px'}} onClick={() => onNotify && onNotify('Producto guardado en tu lista de deseos', 'success')}>
-                    🤎 Guardar en Mi Lista
+                 <button className="secondary-btn" style={{width: '100%', padding: '12px', cursor: 'pointer', fontSize:'14px', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px'}} onClick={() => onNotify && onNotify('Producto guardado en tu lista de deseos', 'success')}>
+                    <Heart size={20} /> Guardar en Mi Lista
                 </button>
             </div>
 

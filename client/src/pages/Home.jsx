@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { useCart } from '../context/CartContext.jsx'
+import { Download, X, RefreshCw, Search, Truck, Store } from 'lucide-react'
 
 function Home({ onNotify }) {
   const [products, setProducts] = useState([])
@@ -191,7 +192,7 @@ function Home({ onNotify }) {
 
           <div style={{position:'absolute', right: '50px', bottom: '40px', display: 'flex', alignItems: 'center', gap: '15px'}}>
                <div style={{background: '#f96302', width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px'}}>
-                  <span style={{fontSize: '30px'}}>⬇</span>
+                  <Download size={30} color="white" />
                </div>
                <span style={{color: 'white', fontWeight: 'bold', fontSize: '20px', textShadow: '2px 2px 4px black', textTransform: 'uppercase'}}>
                    Descarga<br/>Nuestro Catálogo
@@ -251,7 +252,9 @@ function Home({ onNotify }) {
                     <div className="store-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="store-modal-header">
                             <h3>Elige una tienda</h3>
-                            <button className="store-modal-close" onClick={() => setIsStoreModalOpen(false)}>×</button>
+                            <button className="store-modal-close" onClick={() => setIsStoreModalOpen(false)}>
+                                <X size={24} />
+                            </button>
                         </div>
                         <div className="store-modal-body">
                             {stores.map(store => (
@@ -346,12 +349,16 @@ function Home({ onNotify }) {
 
         {loading ? (
           <div style={{textAlign:'center', padding:'50px'}}>
-              <div style={{fontSize:'30px', marginBottom:'10px'}}>↻</div>
+              <div style={{display: 'flex', justifyContent: 'center', marginBottom: '10px'}}>
+                  <RefreshCw size={30} className="animate-spin" />
+              </div>
               <p>Actualizando resultados...</p>
           </div>
         ) : products.length === 0 ? (
             <div style={{textAlign:'center', padding:'50px', background:'#f8f9fa', borderRadius:'8px'}}>
-                <div style={{fontSize:'40px', marginBottom:'10px'}}>🔍</div>
+                <div style={{display: 'flex', justifyContent: 'center', marginBottom: '10px'}}>
+                    <Search size={40} color="#666" />
+                </div>
                 <h3>No encontramos productos</h3>
                 <p>Intenta ajustar tus filtros de búsqueda.</p>
             </div>
@@ -378,10 +385,10 @@ function Home({ onNotify }) {
                             
                             <div className="stock-indicator-sml">
                                 <div style={{display:'flex', alignItems:'center', gap:'5px', marginBottom:'5px'}}>
-                                    <span>🚚</span> <span style={{fontSize:'12px', color:'#333'}}>Envío Estándar</span>
+                                    <Truck size={16} color="#333" /> <span style={{fontSize:'12px', color:'#333'}}>Envío Estándar</span>
                                 </div>
                                 <div style={{display:'flex', alignItems:'center', gap:'5px'}}>
-                                    <span>🏪</span> <span style={{fontSize:'12px', color: product.stock>0?'#166534':'#dc2626', fontWeight:'600'}}>
+                                    <Store size={16} color={product.stock>0?'#166534':'#dc2626'} /> <span style={{fontSize:'12px', color: product.stock>0?'#166534':'#dc2626', fontWeight:'600'}}>
                                         {product.stock > 0 ? 'Retiro en Tienda' : 'Agotado en Tienda'}
                                     </span>
                                 </div>

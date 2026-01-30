@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react';
 import axios from 'axios';
 
 function Cart({ onNotify }) {
@@ -58,7 +59,9 @@ function Cart({ onNotify }) {
     if (cart.length === 0) {
         return (
             <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛒</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <ShoppingCart size={64} style={{ color: '#ccc' }} />
+                </div>
                 <h2 style={{ marginBottom: '1rem', color: '#333' }}>Tu carrito está vacío</h2>
                 <p style={{ color: '#666', marginBottom: '2rem' }}>Parece que aún no has agregado productos a tu pedido.</p>
                 <Link to="/" className="btn-primary" style={{ 
@@ -109,13 +112,13 @@ function Cart({ onNotify }) {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <button 
                                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                style={{ width: '30px', height: '30px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
-                                            >-</button>
+                                                style={{ width: '30px', height: '30px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            ><Minus size={16} /></button>
                                             <span style={{ width: '40px', textAlign: 'center' }}>{item.quantity}</span>
                                             <button 
                                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                style={{ width: '30px', height: '30px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
-                                            >+</button>
+                                                style={{ width: '30px', height: '30px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            ><Plus size={16} /></button>
                                         </div>
                                     </div>
 
@@ -128,9 +131,9 @@ function Cart({ onNotify }) {
                                         </div>
                                         <button 
                                             onClick={() => removeFromCart(item.id)}
-                                            style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.9rem' }}
+                                            style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                         >
-                                            Eliminar
+                                            <Trash2 size={14} /> Eliminar
                                         </button>
                                     </div>
                                 </div>

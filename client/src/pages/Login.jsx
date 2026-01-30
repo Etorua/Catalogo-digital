@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
 
 function Login({ onLogin }) {
     const [email, setEmail] = useState('');
@@ -69,10 +69,7 @@ function Login({ onLogin }) {
                             width: '80px', height: '80px', border: '2px solid white', borderRadius: '50%', 
                             margin: '0 auto 30px', display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
+                             <User size={40} strokeWidth={1.5} />
                         </div>
                         
                         <h2 style={{fontSize: '24px', fontWeight: '600', marginBottom: '40px', letterSpacing: '1px'}}>

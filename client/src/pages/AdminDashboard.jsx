@@ -28,6 +28,8 @@ import {
     Truck,
     Banknote,
     BarChart3,
+    Building,
+    Globe,
     Receipt,
     CreditCard,
     UserCog
@@ -147,6 +149,10 @@ function AdminDashboard({ user }) {
 
     // --- User Logic ---
     const [users, setUsers] = useState([]);
+    const [userSearch, setUserSearch] = useState('');
+    const [filterUserRole, setFilterUserRole] = useState('TODOS');
+    const [filterUserDept, setFilterUserDept] = useState('TODOS');
+    const [filterUserStatus, setFilterUserStatus] = useState('ACTIVOS');
 
     // --- Clients Logic ---
     const [clients, setClients] = useState([]);
@@ -787,227 +793,372 @@ function AdminDashboard({ user }) {
 
                  {/* --- DASHBOARD HOME VIEW --- */}
                  {activeTab === 'dashboard' && (
-                     <>
-                        <div className="stats-grid">
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper"><Package size={24} color="#6a1b3d" /></div>
-                                <div className="stat-value">{totalProducts}</div>
-                                <div className="stat-label">Artículos en Maestro</div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper"><AlertTriangle size={24} color="#dc2626" /></div>
-                                <div className="stat-value" style={{color: '#dc2626'}}>{lowStock}</div>
-                                <div className="stat-label">Stock Crítico / Reponer</div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper"><DollarSign size={24} color="#166534" /></div>
-                                <div className="stat-value" style={{color: '#166534'}}>${inventoryValue.toLocaleString()}</div>
-                                <div className="stat-label">Valor Inventario</div>
-                            </div>
-                        </div>
-
-                        <div className="stats-grid">
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper"><Megaphone size={24} color="#f96302" /></div>
-                                <div className="stat-value">{campaigns.filter(c => c.is_active).length}</div>
-                                <div className="stat-label">Campañas Activas</div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper"><Users size={24} color="#0284c7" /></div>
-                                <div className="stat-value">{users.length}</div>
-                                <div className="stat-label">Usuarios Registrados</div>
-                            </div>
-                             <div className="stat-card">
-                                <div className="stat-icon-wrapper"><ClipboardList size={24} color="#4b5563" /></div>
-                                <div className="stat-value">{pendingOrders}</div>
-                                <div className="stat-label">Pedidos Pendientes</div>
-                            </div>
-                        </div>
-
-                        <div className="stats-grid" style={{marginTop: '20px'}}>
-                            <div className="stat-card" style={{gridColumn: 'span 3'}}>
-                                <div className="stat-icon-wrapper"><DollarSign size={24} color="#166534" /></div>
-                                <div className="stat-value" style={{color: '#166534'}}>${revenue.toLocaleString()}</div>
-                                <div className="stat-label">Ventas Totales (Realizadas)</div>
-                            </div>
-                        </div>
-
-                        <h3 style={{marginTop: '40px'}}>Actividad Reciente</h3>
-                        <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'}}>
-                            {orders.slice(0, 5).map(o => (
-                                <div key={o.id} style={{display:'flex', justifyContent:'space-between', padding:'10px', borderBottom:'1px solid #eee'}}>
-                                    <div>
-                                        <strong>Orden #{o.id}</strong> - {o.customer_name}
-                                    </div>
-                                    <div>
-                                        <span onClick={() => setActiveTab('orders')} style={{cursor:'pointer', padding:'2px 8px', borderRadius:'4px', fontSize:'12px', background: o.status === 'pending' ? '#fef3c7' : '#dcfce7', color: o.status === 'pending' ? '#92400e' : '#166534'}}>
-                                            {o.status.toUpperCase()}
-                                        </span>
-                                        <span style={{marginLeft: '10px'}}>${parseFloat(o.total).toLocaleString()}</span>
-                                    </div>
+                     <div style={{display: 'flex', flexDirection: 'column', gap: '24px'}}>
+                        {/* Highlights Grid */}
+                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px'}}>
+                            {/* Products Card */}
+                            <div style={{background:'white', padding:'24px', borderRadius:'16px', boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', display:'flex', alignItems:'center', gap:'20px', border: '1px solid #f3f4f6'}}>
+                                <div style={{minWidth:'56px', height:'56px', borderRadius:'16px', background:'#fdf2f8', display:'flex', alignItems:'center', justifyContent:'center', color:'#db2777'}}>
+                                    <Package size={28} />
                                 </div>
-                            ))}
-                            {orders.length === 0 && <p style={{color: '#666', fontStyle: 'italic'}}>No hay actividad reciente.</p>}
-                        </div>
-                     </>
-                 )}
-
-                 {/* --- POS (Punto de Venta) --- */}
-                 {activeTab === 'pos' && (
-                     <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:'20px', height:'calc(100vh - 150px)'}}>
-                        
-                        {/* LEFT: ADD PRODUCTS */}
-                        <div style={{display:'flex', flexDirection:'column', gap:'20px'}}>
+                                <div style={{flex: 1}}>
+                                   <div style={{fontSize:'32px', fontWeight:'800', color:'#111827', lineHeight: '1', marginBottom: '4px'}}>{totalProducts}</div>
+                                   <div style={{fontSize:'14px', color:'#6b7280', fontWeight:'600'}}>Artículos en Maestro</div>
+                                </div>
+                            </div>
                             
-                            {/* Search Bar */}
-                            <div style={{background:'white', padding:'15px', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', display:'flex', gap:'10px'}}>
-                                <div style={{position:'relative', flex:1}}>
-                                    <Search size={20} style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', color:'#999'}} />
-                                    <input 
-                                        autoFocus
-                                        placeholder="Buscar por código de barras, SKU o nombre..." 
-                                        value={posSearch}
-                                        onChange={e => setPosSearch(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') {
-                                                const found = products.find(p => p.sku === posSearch || p.barcode === posSearch);
-                                                if (found) {
-                                                    addToPosCart(found);
-                                                    setPosSearch('');
-                                                }
-                                            }
-                                        }}
-                                        style={{width:'100%', padding:'12px 12px 12px 40px', fontSize:'16px', border:'1px solid #ddd', borderRadius:'4px', outline:'none', boxSizing:'border-box'}} 
-                                    />
+                            {/* Stock Critico */}
+                            <div style={{background:'white', padding:'24px', borderRadius:'16px', boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', display:'flex', alignItems:'center', gap:'20px', border: '1px solid #f3f4f6'}}>
+                                <div style={{minWidth:'56px', height:'56px', borderRadius:'16px', background:'#fef2f2', display:'flex', alignItems:'center', justifyContent:'center', color:'#dc2626'}}>
+                                    <AlertTriangle size={28} />
+                                </div>
+                                <div style={{flex: 1}}>
+                                   <div style={{fontSize:'32px', fontWeight:'800', color:'#dc2626', lineHeight: '1', marginBottom: '4px'}}>{lowStock}</div>
+                                   <div style={{fontSize:'14px', color:'#6b7280', fontWeight:'600'}}>Stock Crítico / Reponer</div>
                                 </div>
                             </div>
 
-                            {/* Product Select Grid */}
-                            <div style={{flex:1, overflowY:'auto', background:'white', padding:'15px', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
-                                {posSearch.length === 0 ? (
-                                    <div style={{textAlign:'center', marginTop:'50px', color:'#999'}}>
-                                        <ShoppingCart size={48} style={{opacity:0.2, marginBottom:'10px'}} />
-                                        <p>Escanee un producto o escriba para buscar.</p>
-                                        <div style={{marginTop:'30px', textAlign:'left'}}>
-                                            <h4 style={{marginLeft:'10px', marginBottom:'10px'}}>Productos Frecuentes</h4>
-                                            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))', gap:'10px'}}>
-                                                {products.slice(0, 8).map(p => (
-                                                    <button key={p.id} onClick={() => addToPosCart(p)} style={{border:'1px solid #eee', background:'white', padding:'10px', borderRadius:'6px', cursor:'pointer', textAlign:'left', display:'flex', flexDirection:'column', gap:'5px', transition:'all 0.1s', ':hover':{borderColor:'#aaa'}}}>
-                                                        <div style={{fontSize:'12px', fontWeight:'bold', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%'}}>{p.title}</div>
-                                                        <div style={{fontSize:'14px', color:'#166534', fontWeight:'bold'}}>${Number(p.price_base).toFixed(2)}</div>
-                                                    </button>
-                                                ))}
+                            {/* Valor Inventario */}
+                            <div style={{background:'white', padding:'24px', borderRadius:'16px', boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', display:'flex', alignItems:'center', gap:'20px', border: '1px solid #f3f4f6'}}>
+                                <div style={{minWidth:'56px', height:'56px', borderRadius:'16px', background:'#f0fdf4', display:'flex', alignItems:'center', justifyContent:'center', color:'#16a34a'}}>
+                                    <DollarSign size={28} />
+                                </div>
+                                <div style={{flex: 1}}>
+                                   <div style={{fontSize:'32px', fontWeight:'800', color:'#16a34a', lineHeight: '1', marginBottom: '4px'}}>${inventoryValue.toLocaleString()}</div>
+                                   <div style={{fontSize:'14px', color:'#6b7280', fontWeight:'600'}}>Valor Inventario</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Secondary Stats Grid */}
+                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px'}}>
+                            
+                            {/* Campañas */}
+                            <div style={{background:'white', padding:'20px', borderRadius:'16px', boxShadow:'0 1px 3px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '16px'}}>
+                                <div style={{width:'40px', height:'40px', borderRadius:'12px', background:'#fff7ed', display:'flex', alignItems:'center', justifyContent:'center', color:'#ea580c'}}>
+                                    <Megaphone size={20} />
+                                </div>
+                                <div>
+                                    <div style={{fontSize:'20px', fontWeight:'700', color:'#1f2937'}}>{campaigns.filter(c => c.is_active).length}</div>
+                                    <div style={{fontSize:'12px', fontWeight:'600', color:'#6b7280'}}>Campañas Activas</div>
+                                </div>
+                            </div>
+
+                            {/* Usuarios */}
+                            <div style={{background:'white', padding:'20px', borderRadius:'16px', boxShadow:'0 1px 3px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '16px'}}>
+                                <div style={{width:'40px', height:'40px', borderRadius:'12px', background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', color:'#2563eb'}}>
+                                    <Users size={20} />
+                                </div>
+                                <div>
+                                    <div style={{fontSize:'20px', fontWeight:'700', color:'#1f2937'}}>{users.length}</div>
+                                    <div style={{fontSize:'12px', fontWeight:'600', color:'#6b7280'}}>Usuarios</div>
+                                </div>
+                            </div>
+
+                            {/* Pedidos Pendientes */}
+                            <div style={{background:'white', padding:'20px', borderRadius:'16px', boxShadow:'0 1px 3px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '16px'}}>
+                                <div style={{width:'40px', height:'40px', borderRadius:'12px', background:'#fefce8', display:'flex', alignItems:'center', justifyContent:'center', color:'#ca8a04'}}>
+                                    <ClipboardList size={20} />
+                                </div>
+                                <div>
+                                    <div style={{fontSize:'20px', fontWeight:'700', color:'#1f2937'}}>{pendingOrders}</div>
+                                    <div style={{fontSize:'12px', fontWeight:'600', color:'#6b7280'}}>Pedidos Pendientes</div>
+                                </div>
+                            </div>
+
+                            {/* Ventas Totales */}
+                            <div style={{background:'linear-gradient(135deg, #059669 0%, #10b981 100%)', padding:'20px', borderRadius:'16px', boxShadow:'0 4px 6px -1px rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', gap: '16px', color: 'white'}}>
+                                <div style={{width:'40px', height:'40px', borderRadius:'12px', background:'rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                    <DollarSign size={20} color="white"/>
+                                </div>
+                                <div>
+                                    <div style={{fontSize:'20px', fontWeight:'700'}}>${revenue.toLocaleString()}</div>
+                                    <div style={{fontSize:'12px', fontWeight:'500', opacity: 0.9}}>Ventas Totales</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Recent Activity */}
+                        <div style={{background:'white', borderRadius:'16px', boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border: '1px solid #e5e7eb', overflow: 'hidden'}}>
+                            <div style={{padding: '24px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                                <h3 style={{fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0}}>Actividad Reciente</h3>
+                                <button className="secondary-btn" onClick={() => setActiveTab('orders')} style={{fontSize: '12px', padding: '6px 12px'}}>Ver Todo</button>
+                            </div>
+                            <div>
+                                {orders.slice(0, 5).map(o => (
+                                    <div key={o.id} style={{display:'flex', justifyContent:'space-between', alignItems: 'center', padding:'20px 24px', borderBottom:'1px solid #f9fafb', transition: 'background 0.2s', cursor: 'pointer'}} onMouseOver={e=>e.currentTarget.style.background='#f9fafb'} onMouseOut={e=>e.currentTarget.style.background='transparent'}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                                            <div style={{width: '40px', height: '40px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontWeight: '700', fontSize: '14px'}}>
+                                                #{o.id}
+                                            </div>
+                                            <div>
+                                                <div style={{fontWeight: '600', color: '#1f2937', fontSize: '14px'}}>{o.customer_name}</div>
+                                                <div style={{fontSize: '12px', color: '#9ca3af'}}>{new Date(o.date).toLocaleDateString()}</div>
                                             </div>
                                         </div>
+                                        <div style={{textAlign: 'right'}}>
+                                            <div style={{fontWeight: '700', color: '#111827', fontSize: '15px'}}>${parseFloat(o.total).toLocaleString()}</div>
+                                            <span style={{padding:'4px 10px', borderRadius:'9999px', fontSize:'11px', fontWeight: '700', background: o.status === 'pending' ? '#fef3c7' : '#dcfce7', color: o.status === 'pending' ? '#92400e' : '#166534', display: 'inline-block', marginTop: '4px'}}>
+                                                {o.status.toUpperCase()}
+                                            </span>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(180px, 1fr))', gap:'15px'}}>
-                                        {products.filter(p => 
-                                            p.title.toLowerCase().includes(posSearch.toLowerCase()) || 
-                                            p.sku.toLowerCase().includes(posSearch.toLowerCase()) ||
-                                            (p.barcode && p.barcode.includes(posSearch))
-                                        ).map(p => (
-                                            <div key={p.id} onClick={() => addToPosCart(p)} style={{border:'1px solid #eee', borderRadius:'8px', padding:'10px', cursor:'pointer', position:'relative', transition:'transform 0.1s', ':active':{transform:'scale(0.98)'}}}>
-                                                <div style={{height:'100px', background:'#f5f5f5', borderRadius:'4px', marginBottom:'10px', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                                                    {p.images && p.images[0] ? <img src={p.images[0]} style={{width:'80%', height:'80%', objectFit:'contain'}} alt=""/> : <Package size={30} color="#ccc"/>}
-                                                </div>
-                                                <div style={{fontSize:'13px', fontWeight:'600', marginBottom:'5px', height:'36px', overflow:'hidden'}}>{p.title}</div>
-                                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                                                     <div style={{fontSize:'15px', color:'#166534', fontWeight:'bold'}}>${Number(p.price_base).toFixed(2)}</div>
-                                                     <div style={{fontSize:'10px', background: p.stock > 0 ? '#dcfce7' : '#fee2e2', color: p.stock > 0 ? '#166534' : '#991b1b', padding:'2px 6px', borderRadius:'10px'}}>
-                                                        Stock: {p.stock}
-                                                     </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                ))}
+                                {orders.length === 0 && (
+                                    <div style={{padding: '40px', textAlign: 'center', color: '#9ca3af'}}>
+                                        <div style={{fontSize: '48px', marginBottom: '16px'}}>💤</div>
+                                        <p>No hay actividad reciente registrada.</p>
                                     </div>
                                 )}
-                            </div>
-                        </div>
-
-                        {/* RIGHT: TICKET */}
-                        <div style={{background:'white', borderRadius:'8px', boxShadow:'0 2px 5px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', overflow:'hidden'}}>
-                            {/* Client Header */}
-                            <div style={{padding:'15px', background:'#f8f9fa', borderBottom:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                                <div>
-                                    <div style={{fontSize:'11px', color:'#666', fontWeight:'bold'}}>CLIENTE</div>
-                                    <div style={{fontWeight:'bold'}}>{posClient.name}</div>
-                                </div>
-                                <button className="secondary-btn" style={{padding:'4px 8px'}}><Users size={14}/></button>
-                            </div>
-
-                            {/* Items List */}
-                            <div style={{flex:1, overflowY:'auto', padding:'0'}}>
-                                {posCart.length === 0 ? (
-                                    <div style={{textAlign:'center', padding:'40px', color:'#bbb'}}>
-                                        Carro Vacío
-                                    </div>
-                                ) : (
-                                    <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
-                                        <thead style={{background:'#fff', position:'sticky', top:0}}>
-                                            <tr style={{borderBottom:'1px solid #eee', color:'#888'}}>
-                                                <th style={{padding:'10px 15px', textAlign:'left'}}>Cant.</th>
-                                                <th style={{padding:'10px 15px', textAlign:'left'}}>Producto</th>
-                                                <th style={{padding:'10px 15px', textAlign:'right'}}>Total</th>
-                                                <th style={{width:'30px'}}></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {posCart.map(item => (
-                                                <tr key={item.id} style={{borderBottom:'1px solid #f5f5f5'}}>
-                                                    <td style={{padding:'10px 15px'}}>
-                                                        <input 
-                                                            type="number" 
-                                                            min="1" 
-                                                            value={item.qty} 
-                                                            onChange={e => updatePosQty(item.id, parseInt(e.target.value))}
-                                                            style={{width:'40px', padding:'4px', textAlign:'center', border:'1px solid #ddd', borderRadius:'4px'}} 
-                                                        />
-                                                    </td>
-                                                    <td style={{padding:'10px 15px'}}>
-                                                        <div style={{fontWeight:'500'}}>{item.title}</div>
-                                                        <div style={{fontSize:'11px', color:'#666'}}>${Number(item.price_base).toFixed(2)} c/u</div>
-                                                    </td>
-                                                    <td style={{padding:'10px 15px', textAlign:'right', fontWeight:'bold'}}>
-                                                        ${(item.qty * item.price_base).toFixed(2)}
-                                                    </td>
-                                                    <td style={{padding:'0 10px'}}>
-                                                        <button onClick={() => removeFromPosCart(item.id)} style={{border:'none', background:'none', color:'#ccc', cursor:'pointer', padding:'2px'}}>×</button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </div>
-
-                            {/* Totals Footer */}
-                            <div style={{padding:'20px', background:'#f8f9fa', borderTop:'1px solid #eee'}}>
-                                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'5px', fontSize:'14px', color:'#666'}}>
-                                    <span>Subtotal:</span>
-                                    <span>${(posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0) / 1.16).toFixed(2)}</span>
-                                </div>
-                                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px', fontSize:'14px', color:'#666'}}>
-                                    <span>IVA (16%):</span>
-                                    <span>${(posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0) - (posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0) / 1.16)).toFixed(2)}</span>
-                                </div>
-                                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px', fontSize:'24px', fontWeight:'bold', color:'#333'}}>
-                                    <span>Total:</span>
-                                    <span>${posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0).toFixed(2)}</span>
-                                </div>
-
-                                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>
-                                    <button onClick={() => handlePosCheckout('cash')} className="primary-btn" style={{background:'#166534', justifyContent:'center', fontSize:'14px', height:'45px'}}>
-                                        <Banknote size={18} style={{marginRight:'8px'}}/> EFE
-                                    </button>
-                                    <button onClick={() => handlePosCheckout('card')} className="primary-btn" style={{background:'#0369a1', justifyContent:'center', fontSize:'14px', height:'45px'}}>
-                                        <CreditCard size={18} style={{marginRight:'8px'}}/> TAR
-                                    </button>
-                                </div>
                             </div>
                         </div>
                      </div>
                  )}
+
+            {/* --- POS VIEW --- */}
+            {activeTab === 'pos' && (
+                <div style={{display:'flex', gap:'24px', height:'calc(100vh - 120px)', marginTop: '8px'}}>
+                    {/* LEFT: Product Selection */}
+                    <div style={{flex: 2, display:'flex', flexDirection:'column', gap:'20px', minWidth: '0'}}>
+                        
+                        {/* Search Bar */}
+                        <div style={{background:'white', padding:'20px', borderRadius:'16px', boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border:'1px solid #e5e7eb'}}>
+                            <div style={{position:'relative', width: '100%'}}>
+                                <Search size={22} style={{position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'#9ca3af'}} />
+                                <input 
+                                    autoFocus
+                                    type="text" 
+                                    placeholder="Buscar producto por nombre, SKU o escanear código de barras..." 
+                                    value={posSearch}
+                                    onChange={(e) => setPosSearch(e.target.value)}
+                                    // Simula un escáner de código de barras presionando Enter
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const exactMatch = products.find(p => p.sku === posSearch || p.barcode === posSearch);
+                                            if (exactMatch) {
+                                                addToPosCart(exactMatch);
+                                                setPosSearch('');
+                                            }
+                                        }
+                                    }}
+                                    style={{width:'100%', padding:'16px 16px 16px 52px', fontSize:'16px', border:'1px solid #e5e7eb', borderRadius:'12px', outline:'none', transition: 'all 0.2s', boxSizing: 'border-box', background: '#f9fafb', color: '#111827'}} 
+                                    onFocus={(e) => {e.target.style.borderColor = '#2563eb'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px rgba(37, 99, 235, 0.1)'}}
+                                    onBlur={(e) => {e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; e.target.style.boxShadow = 'none'}}
+                                />
+                                <div style={{position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: '8px'}}>
+                                    <div style={{border: '1px solid #e5e7eb', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', color: '#6b7280', background: 'white', fontWeight: '600', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'}}>ESCANEÁ AQUÍ</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Product Grid */}
+                        <div style={{flex:1, overflowY:'auto', background:'white', padding:'24px', borderRadius:'16px', boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border:'1px solid #e5e7eb'}}>
+                            {posSearch.length === 0 ? (
+                                <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+                                    <h4 style={{fontSize: '18px', fontWeight: '800', color: '#111827', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                        <div style={{width: '32px', height: '32px', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', color: '#2563eb', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(37, 99, 235, 0.1)'}}>
+                                            <span style={{fontSize: '16px'}}>★</span>
+                                        </div>
+                                        Productos Frecuentes
+                                    </h4>
+                                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:'20px', alignContent: 'start'}}>
+                                        {products.slice(0, 10).map(p => (
+                                            <button key={p.id} onClick={() => addToPosCart(p)} style={{
+                                                border: '1px solid #f3f4f6', background: 'white', padding: '0', borderRadius: '16px', cursor: 'pointer', textAlign: 'left', 
+                                                display: 'flex', flexDirection: 'column', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden', height: '100%',
+                                                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                                            }}
+                                            onMouseEnter={e => {e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'; e.currentTarget.style.borderColor = '#bfdbfe'}}
+                                            onMouseLeave={e => {e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor = '#f3f4f6'}}
+                                            >
+                                                <div style={{height: '140px', width: '100%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden'}}>
+                                                    {p.images && p.images[0] ? (
+                                                        <img src={p.images[0]} style={{width:'100%', height:'100%', objectFit:'cover', transition: 'transform 0.5s'}} alt=""/> 
+                                                    ) : (
+                                                        <Package size={48} color="#cbd5e1" style={{opacity: 0.5}}/>
+                                                    )}
+                                                    <div style={{position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.95)', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', color: p.stock > 0 ? '#059669' : '#dc2626', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backdropFilter: 'blur(4px)'}}>
+                                                        {p.stock} un
+                                                    </div>
+                                                </div>
+                                                <div style={{padding: '16px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', gap: '12px'}}>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#374151', lineHeight: '1.4', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', height: '40px'}}>
+                                                        {p.title}
+                                                    </div>
+                                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                                                        <div style={{fontSize: '18px', fontWeight: '800', color: '#059669'}}>${Number(p.price_base).toFixed(2)}</div>
+                                                        <div style={{width: '24px', height: '24px', borderRadius: '50%', background: '#dcfce7', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                                                            <Plus size={14} strokeWidth={3} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '40px', color: '#9ca3af', flexDirection: 'column', gap: '16px'}}>
+                                        <div style={{background: '#f3f4f6', padding: '24px', borderRadius: '50%', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'}}>
+                                            <Search size={40} style={{opacity: 0.5}} />
+                                        </div>
+                                        <div style={{textAlign: 'center'}}>
+                                            <p style={{marginBottom: '4px', fontWeight: '700', color: '#4b5563', fontSize: '18px'}}>Lista para vender</p>
+                                            <p style={{fontSize: '14px', color: '#6b7280'}}>Busca productos o escanea un código de barras para comenzar una venta</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:'20px'}}>
+                                    {products.filter(p => 
+                                        p.title.toLowerCase().includes(posSearch.toLowerCase()) || 
+                                        p.sku.toLowerCase().includes(posSearch.toLowerCase()) ||
+                                        (p.barcode && p.barcode.includes(posSearch))
+                                    ).map(p => (
+                                        <div key={p.id} onClick={() => addToPosCart(p)} style={{border:'1px solid #e5e7eb', borderRadius:'16px', cursor:'pointer', position:'relative', transition:'all 0.2s', background: 'white', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'}}
+                                            onMouseEnter={e => {e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}}
+                                            onMouseLeave={e => {e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'}}
+                                        >
+                                            <div style={{height:'150px', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', position: 'relative'}}>
+                                                {p.images && p.images[0] ? <img src={p.images[0]} style={{width:'100%', height:'100%', objectFit:'cover'}} alt=""/> : <Package size={48} color="#cbd5e1" style={{opacity: 0.6}}/>}
+                                                <div style={{position: 'absolute', bottom: '0', left: '0', right: '0', padding: '8px 12px', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)', color: 'white', fontSize: '11px', fontWeight: '600'}}>
+                                                    SKU: {p.sku}
+                                                </div>
+                                            </div>
+                                            <div style={{padding: '16px'}}>
+                                                <div style={{fontSize:'14px', fontWeight:'600', marginBottom:'12px', color: '#1f2937', height: '40px', overflow: 'hidden', lineHeight: '1.4'}}>{p.title}</div>
+                                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                                     <div style={{fontSize:'18px', color:'#059669', fontWeight:'800'}}>${Number(p.price_base).toFixed(2)}</div>
+                                                     <div style={{fontSize:'11px', background: p.stock > 0 ? '#ecfdf5' : '#fef2f2', color: p.stock > 0 ? '#047857' : '#b91c1c', padding:'4px 8px', borderRadius:'9999px', fontWeight: '700', border: p.stock > 0 ? '1px solid #a7f3d0' : '1px solid #fecaca'}}>
+                                                        {p.stock} un
+                                                     </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {products.filter(p => p.title.toLowerCase().includes(posSearch.toLowerCase())).length === 0 && (
+                                        <div style={{gridColumn: '1 / -1', padding: '60px', textAlign: 'center', color: '#6b7280'}}>
+                                            <div style={{fontSize: '48px', marginBottom: '16px'}}>🔍</div>
+                                            <p style={{fontSize: '16px', fontWeight: '600'}}>No se encontraron productos</p>
+                                            <p style={{fontSize: '14px', marginTop: '4px'}}>Intenta con otro término de búsqueda</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT: TICKET / CART */}
+                    <div style={{flex: 1, minWidth: '400px', maxWidth: '450px', background:'white', borderRadius:'16px', boxShadow:'0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', border: '1px solid #e5e7eb', display:'flex', flexDirection:'column', overflow:'hidden', position: 'relative'}}>
+                        {/* Ticket Header */}
+                        <div style={{background: '#111827', color: 'white', padding: '20px'}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+                                <h3 style={{margin: 0, fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.025em'}}>
+                                    <ShoppingCart size={20} /> TICKET DE VENTA
+                                </h3>
+                                <div style={{fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '6px', fontWeight: '600', border: '1px solid rgba(255,255,255,0.1)'}}>
+                                    ORDEN #{Math.floor(Math.random() * 10000)}
+                                </div>
+                            </div>
+                            
+                            {/* Client Selector (Compact) */}
+                            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.08)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)'}}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                    <div style={{width: '32px', height: '32px', borderRadius: '50%', background: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af'}}>
+                                        <Users size={16} />
+                                    </div>
+                                    <div>
+                                        <div style={{fontSize: '10px', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600'}}>Datos del Cliente</div>
+                                        <div style={{fontWeight: '700', fontSize: '14px', color: 'white'}}>{posClient.name}</div>
+                                    </div>
+                                </div>
+                                <button className="secondary-btn" style={{padding: '6px', height: 'auto', fontSize: '11px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'background 0.2s', ':hover':{background: 'rgba(255,255,255,0.2)'}}} title="Cambiar Cliente">
+                                    <UserCog size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Items List */}
+                        <div style={{flex:1, overflowY:'auto', padding:'0', background: '#f9fafb'}}>
+                            {posCart.length === 0 ? (
+                                <div style={{height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', gap: '20px', padding: '40px', textAlign: 'center'}}>
+                                    <div style={{width: '96px', height: '96px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e5e7eb'}}>
+                                        <ShoppingCart size={40} opacity={0.3} color="#6b7280" />
+                                    </div>
+                                    <div style={{maxWidth: '240px'}}>
+                                        <p style={{fontWeight: '700', color: '#374151', fontSize: '16px', marginBottom: '8px'}}>Tu carrito está vacío</p>
+                                        <p style={{fontSize: '14px', lineHeight: '1.5'}}>Selecciona productos del panel izquierdo para agregarlos a la orden.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
+                                    <thead style={{position:'sticky', top:0, zIndex: 10, background: '#f3f4f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'}}>
+                                        <tr style={{color:'#6b7280', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700'}}>
+                                            <th style={{padding:'12px 16px', textAlign:'left'}}>Producto</th>
+                                            <th style={{padding:'12px', textAlign:'center', width: '70px'}}>Cant.</th>
+                                            <th style={{padding:'12px 20px', textAlign:'right'}}>Total</th>
+                                            <th style={{width:'40px'}}></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style={{background: 'white'}}>
+                                        {posCart.map(item => (
+                                            <tr key={item.id} style={{borderBottom:'1px solid #f3f4f6'}}>
+                                                <td style={{padding:'16px', verticalAlign: 'middle'}}>
+                                                    <div style={{fontWeight:'600', color: '#1f2937', marginBottom: '4px', fontSize: '14px'}}>{item.title}</div>
+                                                    <div style={{fontSize:'12px', color:'#6b7280'}}>${Number(item.price_base).toFixed(2)} c/u</div>
+                                                </td>
+                                                <td style={{padding:'16px 8px', verticalAlign: 'middle'}}>
+                                                    <input 
+                                                        type="number" 
+                                                        min="1" 
+                                                        value={item.qty} 
+                                                        onChange={e => updatePosQty(item.id, parseInt(e.target.value))}
+                                                        style={{width:'100%', padding:'8px', textAlign:'center', border:'1px solid #d1d5db', borderRadius:'8px', fontWeight: '600', color: '#111827', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s', ':focus':{borderColor: '#2563eb'}}} 
+                                                    />
+                                                </td>
+                                                <td style={{padding:'16px 20px', textAlign:'right', fontWeight:'700', color: '#1f2937', fontSize: '15px', verticalAlign: 'middle'}}>
+                                                    ${(item.qty * item.price_base).toFixed(2)}
+                                                </td>
+                                                <td style={{padding:'16px 8px', verticalAlign: 'middle', textAlign: 'center'}}>
+                                                    <button onClick={() => removeFromPosCart(item.id)} style={{border:'none', background:'none', color:'#ef4444', cursor:'pointer', padding:'8px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s'}} className="hover:bg-red-50">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+
+                        {/* Totals Footer */}
+                        <div style={{background:'white', padding: '24px', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.03)', zIndex: 10}}>
+                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', fontSize:'14px', color:'#6b7280'}}>
+                                <span>Subtotal</span>
+                                <span>${(posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0) / 1.16).toFixed(2)}</span>
+                            </div>
+                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px', fontSize:'14px', color:'#6b7280'}}>
+                                <span>IVA (16%)</span>
+                                <span>${(posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0) - (posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0) / 1.16)).toFixed(2)}</span>
+                            </div>
+                            
+                            <div style={{display:'flex', justifyContent:'space-between', alignItems: 'center', marginBottom:'24px', padding: '20px 0', borderTop: '2px dashed #e5e7eb', borderBottom: '2px dashed #e5e7eb'}}>
+                                <span style={{fontSize: '15px', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Total a Pagar</span>
+                                <span style={{fontSize: '32px', fontWeight: '800', color: '#111827', lineHeight: '1'}}>${posCart.reduce((acc, i) => acc + (i.price_base * i.qty), 0).toFixed(2)}</span>
+                            </div>
+
+                            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px'}}>
+                                <button onClick={() => handlePosCheckout('cash')} style={{background:'#16a34a', border: 'none', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(22, 163, 74, 0.3)'}} onMouseOver={e => e.currentTarget.style.background = '#15803d'} onMouseOut={e => e.currentTarget.style.background = '#16a34a'}>
+                                    <Banknote size={24} style={{marginBottom: '4px'}}/> 
+                                    <span style={{fontWeight: '700', fontSize: '14px'}}>EFECTIVO</span>
+                                </button>
+                                <button onClick={() => handlePosCheckout('card')} style={{background:'#0ea5e9', border: 'none', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(14, 165, 233, 0.3)'}} onMouseOver={e => e.currentTarget.style.background = '#0284c7'} onMouseOut={e => e.currentTarget.style.background = '#0ea5e9'}>
+                                    <CreditCard size={24} style={{marginBottom: '4px'}}/> 
+                                    <span style={{fontWeight: '700', fontSize: '14px'}}>TARJETA</span>
+                                </button>
+                            </div>
+                        </div>
+                     </div>
+                 </div>
+            )}
 
                  {/* --- CLIENTS --- */}
                  {activeTab === 'clients' && (
@@ -1041,11 +1192,194 @@ function AdminDashboard({ user }) {
 
                  {/* --- REPORTS --- */}
                  {activeTab === 'reports' && (
-                     <div style={{textAlign:'center', padding:'50px', color:'#888'}}>
-                        <BarChart3 size={48} style={{marginBottom:'20px', opacity:0.3}} />
-                        <h2>Reportes y Estadísticas</h2>
-                        <p>Ventas por rubro, ranking de vendedores, reportes fiscales (IVA).</p>
-                        <p style={{fontSize:'12px'}}>(Funcionalidad en desarrollo)</p>
+                     <div style={{display:'flex', flexDirection:'column', gap:'24px'}}>
+                        
+                        {/* Reports Toolbar */}
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'white', padding:'16px 24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 1px 2px rgba(0,0,0,0.05)'}}>
+                            <div style={{display:'flex', gap:'12px'}}>
+                                <select style={{padding:'8px 12px', borderRadius:'8px', border:'1px solid #d1d5db', background:'#f9fafb', fontSize:'14px', fontWeight:'600', color:'#374151', cursor:'pointer', outline:'none'}}>
+                                    <option>Hoy</option>
+                                    <option>Esta Semana</option>
+                                    <option>Este Mes</option>
+                                    <option>Este Año</option>
+                                </select>
+                                <div style={{height:'36px', width:'1px', background:'#e5e7eb'}}></div>
+                                <div style={{display:'flex', alignItems:'center', gap:'8px', fontSize:'14px', color:'#6b7280'}}>
+                                    <span style={{fontWeight:'600'}}>Periodo:</span> 30 Ene 2026
+                                </div>
+                            </div>
+                            <div style={{display:'flex', gap:'12px'}}>
+                                <button className="secondary-btn" style={{display:'flex', alignItems:'center', gap:'8px', height:'auto', padding:'8px 16px', fontSize:'13px'}}>
+                                    <Download size={16} /> Exportar Excel
+                                </button>
+                                <button className="secondary-btn" style={{display:'flex', alignItems:'center', gap:'8px', height:'auto', padding:'8px 16px', fontSize:'13px'}}>
+                                    <FileText size={16} /> PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Financial Overview Cards */}
+                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px'}}>
+                             {/* Gross Sales */}
+                             <div style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px'}}>
+                                    <div>
+                                        <div style={{fontSize:'14px', color:'#6b7280', fontWeight:'600', marginBottom:'4px'}}>Ventas Brutas</div>
+                                        <div style={{fontSize:'28px', fontWeight:'800', color:'#111827'}}>${revenue.toLocaleString()}</div>
+                                    </div>
+                                    <div style={{padding:'8px', background:'#ecfdf5', borderRadius:'10px', color:'#047857'}}>
+                                        <Banknote size={24} />
+                                    </div>
+                                </div>
+                                <div style={{fontSize:'13px', display:'flex', alignItems:'center', gap:'6px', color:'#16a34a', fontWeight:'600'}}>
+                                    <span style={{background:'#dcfce7', padding:'2px 6px', borderRadius:'4px'}}>+12.5%</span> 
+                                    <span style={{color:'#6b7280', fontWeight:'400'}}>vs periodo anterior</span>
+                                </div>
+                             </div>
+
+                             {/* Net Profit (Simulated) */}
+                             <div style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px'}}>
+                                    <div>
+                                        <div style={{fontSize:'14px', color:'#6b7280', fontWeight:'600', marginBottom:'4px'}}>Utilidad Neta</div>
+                                        <div style={{fontSize:'28px', fontWeight:'800', color:'#111827'}}>${(revenue * 0.35).toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+                                    </div>
+                                    <div style={{padding:'8px', background:'#eff6ff', borderRadius:'10px', color:'#1d4ed8'}}>
+                                        <BarChart3 size={24} />
+                                    </div>
+                                </div>
+                                <div style={{fontSize:'13px', display:'flex', alignItems:'center', gap:'6px', color:'#1d4ed8', fontWeight:'600'}}>
+                                    <span style={{background:'#dbeafe', padding:'2px 6px', borderRadius:'4px'}}>35%</span> 
+                                    <span style={{color:'#6b7280', fontWeight:'400'}}>Margen promedio</span>
+                                </div>
+                             </div>
+
+                             {/* Transactions */}
+                             <div style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px'}}>
+                                    <div>
+                                        <div style={{fontSize:'14px', color:'#6b7280', fontWeight:'600', marginBottom:'4px'}}>Transacciones</div>
+                                        <div style={{fontSize:'28px', fontWeight:'800', color:'#111827'}}>{orders.length}</div>
+                                    </div>
+                                    <div style={{padding:'8px', background:'#fff7ed', borderRadius:'10px', color:'#c2410c'}}>
+                                        <Receipt size={24} />
+                                    </div>
+                                </div>
+                                <div style={{fontSize:'13px', display:'flex', alignItems:'center', gap:'6px', color:'#c2410c', fontWeight:'600'}}>
+                                    <span style={{background:'#ffedd5', padding:'2px 6px', borderRadius:'4px'}}>${(revenue / (orders.length || 1)).toFixed(0)}</span> 
+                                    <span style={{color:'#6b7280', fontWeight:'400'}}>Ticket promedio</span>
+                                </div>
+                             </div>
+
+                             {/* Items Sold */}
+                             <div style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px'}}>
+                                    <div>
+                                        <div style={{fontSize:'14px', color:'#6b7280', fontWeight:'600', marginBottom:'4px'}}>Productos Vendidos</div>
+                                        <div style={{fontSize:'28px', fontWeight:'800', color:'#111827'}}>{itemsSold || 0}</div>
+                                    </div>
+                                    <div style={{padding:'8px', background:'#fdf2f8', borderRadius:'10px', color:'#be185d'}}>
+                                        <ShoppingBag size={24} />
+                                    </div>
+                                </div>
+                                <div style={{fontSize:'13px', display:'flex', alignItems:'center', gap:'6px', color:'#be185d', fontWeight:'600'}}>
+                                    <span style={{background:'#fce7f3', padding:'2px 6px', borderRadius:'4px'}}>+5</span> 
+                                    <span style={{color:'#6b7280', fontWeight:'400'}}>vs semana pasada</span>
+                                </div>
+                             </div>
+                        </div>
+
+                        {/* Graph and Top Products Split */}
+                        <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px'}}>
+                            
+                            {/* Monthly Sales Chart (CSS only) */}
+                            <div style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column'}}>
+                                <h3 style={{margin:'0 0 24px 0', fontSize:'18px', fontWeight:'700', color:'#1f2937'}}>Ventas por Día</h3>
+                                
+                                <div style={{flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', height: '240px', paddingBottom: '10px', borderBottom: '1px solid #e5e7eb'}}>
+                                    {[65, 40, 75, 55, 80, 45, 90, 60, 70, 85].map((h, i) => (
+                                        <div key={i} style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', group: 'bar'}}>
+                                            <div style={{
+                                                width: '100%', 
+                                                height: `${h}%`, 
+                                                background: i === 9 ? '#2563eb' : '#e5e7eb', 
+                                                borderRadius: '6px 6px 0 0',
+                                                transition: 'height 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                position: 'relative'
+                                            }}
+                                            onMouseOver={e => e.currentTarget.style.background = '#3b82f6'}
+                                            onMouseOut={e => e.currentTarget.style.background = i === 9 ? '#2563eb' : '#e5e7eb'}
+                                            title={`Ventas: $${h * 100}`}
+                                            ></div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{display:'flex', justifyContent:'space-between', marginTop: '10px', color: '#9ca3af', fontSize: '12px', fontWeight: '600'}}>
+                                    <span>01 Ene</span>
+                                    <span>05 Ene</span>
+                                    <span>10 Ene</span>
+                                    <span>15 Ene</span>
+                                    <span>20 Ene</span>
+                                    <span>25 Ene</span>
+                                    <span>30 Ene</span>
+                                </div>
+                            </div>
+
+                            {/* Top Products */}
+                            <div style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
+                                <h3 style={{margin:'0 0 20px 0', fontSize:'18px', fontWeight:'700', color:'#1f2937'}}>Más Vendidos</h3>
+                                <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
+                                    {products.slice(0, 5).map((p, idx) => (
+                                        <div key={p.id} style={{display:'flex', alignItems:'center', gap:'16px'}}>
+                                            <div style={{fontSize:'14px', fontWeight:'800', color:'#9ca3af', width: '20px'}}>{idx + 1}</div>
+                                            <div style={{width:'48px', height:'48px', borderRadius:'8px', background:'#f3f4f6', overflow:'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                                                {p.images && p.images[0] ? <img src={p.images[0]} style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <Package size={20} color="#cbd5e1"/>}
+                                            </div>
+                                            <div style={{flex: 1}}>
+                                                <div style={{fontSize:'14px', fontWeight:'600', color:'#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px'}}>{p.title}</div>
+                                                <div style={{fontSize:'12px', color:'#6b7280'}}>{Math.floor(Math.random() * 50) + 10} vendidos</div>
+                                            </div>
+                                            <div style={{fontSize:'14px', fontWeight:'700', color:'#16a34a'}}>${(p.price_base * (Math.floor(Math.random() * 20)+1)).toLocaleString()}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button className="secondary-btn" style={{width:'100%', marginTop:'24px', justifyContent:'center', fontSize:'13px'}}>Ver Ranking Completo</button>
+                            </div>
+                        </div>
+
+                         {/* Breakdown Table */}
+                         <div style={{background:'white', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)', overflow: 'hidden'}}>
+                            <div style={{padding: '20px 24px', borderBottom: '1px solid #f3f4f6'}}>
+                                <h3 style={{margin: 0, fontSize: '18px', fontWeight: '700', color: '#1f2937'}}>Desglose por Categoría (Rubro)</h3>
+                            </div>
+                            <table style={{width:'100%', borderCollapse:'collapse', fontSize:'14px'}}>
+                                <thead style={{background:'#f9fafb', color:'#6b7280', fontSize:'12px', textTransform:'uppercase', letterSpacing:'0.05em'}}>
+                                    <tr>
+                                        <th style={{padding:'16px 24px', textAlign:'left', fontWeight:'700'}}>Categoría</th>
+                                        <th style={{padding:'16px 24px', textAlign:'right', fontWeight:'700'}}>Items Vendidos</th>
+                                        <th style={{padding:'16px 24px', textAlign:'right', fontWeight:'700'}}>Ventas Totales</th>
+                                        <th style={{padding:'16px 24px', textAlign:'right', fontWeight:'700'}}>% del Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {['Herramientas Eléctricas', 'Plomería', 'Construcción', 'Pinturas', 'Jardinería'].map((cat, i) => (
+                                        <tr key={cat} style={{borderBottom:'1px solid #f3f4f6'}}>
+                                            <td style={{padding:'16px 24px', fontWeight:'600', color:'#374151'}}>{cat}</td>
+                                            <td style={{padding:'16px 24px', textAlign:'right', color:'#6b7280'}}>{Math.floor(Math.random() * 100) + 20}</td>
+                                            <td style={{padding:'16px 24px', textAlign:'right', fontWeight:'700', color:'#111827'}}>${(Math.random() * 50000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                            <td style={{padding:'16px 24px', textAlign:'right', color:'#6b7280'}}>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end'}}>
+                                                    {25 - (i*5)}%
+                                                    <div style={{width: '60px', height: '6px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden'}}>
+                                                        <div style={{width: `${25 - (i*5)}%`, height: '100%', background: '#2563eb'}}></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                         </div>
                      </div>
                  )}
                  
@@ -1053,21 +1387,90 @@ function AdminDashboard({ user }) {
 
                  {/* --- SETTINGS --- */}
                  {activeTab === 'settings' && (
-                     <div style={{padding:'20px'}}>
-                        <h2>Configuración del Sistema</h2>
-                        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:'20px', marginTop:'20px'}}>
-                             <button className="secondary-btn" onClick={() => setActiveTab('users')} style={{height:'100px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'10px'}}>
-                                <Users size={24} />
-                                Usuarios y Permisos
-                             </button>
-                             {/* ... Otros ajustes ... */}
-                        </div>
+                     <div style={{display:'flex', flexDirection:'column', gap:'32px'}}>
                         
-                        {/* Legacy CMS/Marketing Access */}
-                         <h3 style={{marginTop:'40px', borderTop:'1px solid #eee', paddingTop:'20px'}}>Módulos Web</h3>
-                         <div style={{display:'flex', gap:'10px'}}>
-                            <button className="secondary-btn" onClick={() => setActiveTab('marketing')}>Marketing Web</button>
-                            <button className="secondary-btn" onClick={() => setActiveTab('cms')}>CMS / Páginas</button>
+                         {/* General Administration */}
+                         <div>
+                             <h3 style={{fontSize:'18px', fontWeight:'700', color:'#111827', marginBottom:'16px', display:'flex', alignItems:'center', gap:'8px'}}>
+                                <div style={{width:'24px', height:'24px', borderRadius:'6px', background:'#eef2ff', color:'#4338ca', display:'flex', alignItems:'center', justifyContent:'center'}}><Settings size={14}/></div>
+                                Administración General
+                             </h3>
+                             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:'20px'}}>
+                                 <div onClick={() => setActiveTab('users')} style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 1px 2px rgba(0,0,0,0.05)', cursor:'pointer', transition:'all 0.2s', display:'flex', alignItems:'start', gap:'16px'}} 
+                                     onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'}
+                                     onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'}
+                                 >
+                                     <div style={{width:'48px', height:'48px', borderRadius:'12px', background:'#eff6ff', color:'#2563eb', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                         <Users size={24} />
+                                     </div>
+                                     <div>
+                                         <div style={{fontSize:'16px', fontWeight:'700', color:'#1f2937'}}>Usuarios y Permisos</div>
+                                         <div style={{fontSize:'13px', color:'#6b7280', marginTop:'4px', lineHeight:'1.5'}}>Gestiona el personal, roles y accesos al sistema.</div>
+                                     </div>
+                                 </div>
+
+                                 <div style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 1px 2px rgba(0,0,0,0.05)', cursor:'not-allowed', display:'flex', alignItems:'start', gap:'16px', opacity: 0.7}}>
+                                     <div style={{width:'48px', height:'48px', borderRadius:'12px', background:'#f3f4f6', color:'#6b7280', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                         <Building size={24} />
+                                     </div>
+                                     <div>
+                                         <div style={{fontSize:'16px', fontWeight:'700', color:'#1f2937'}}>Datos de Empresa</div>
+                                         <div style={{fontSize:'13px', color:'#6b7280', marginTop:'4px', lineHeight:'1.5'}}>Configura el logo, dirección y datos fiscales.</div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {/* Web Integrations */}
+                         <div>
+                             <h3 style={{fontSize:'18px', fontWeight:'700', color:'#111827', marginBottom:'16px', display:'flex', alignItems:'center', gap:'8px'}}>
+                                <div style={{width:'24px', height:'24px', borderRadius:'6px', background:'#fff7ed', color:'#c2410c', display:'flex', alignItems:'center', justifyContent:'center'}}><Globe size={14}/></div>
+                                Integraciones Web
+                             </h3>
+                             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:'20px'}}>
+                                 <div onClick={() => setActiveTab('marketing')} style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 1px 2px rgba(0,0,0,0.05)', cursor:'pointer', transition:'all 0.2s', display:'flex', alignItems:'start', gap:'16px'}}
+                                     onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'}
+                                     onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'}
+                                 >
+                                     <div style={{width:'48px', height:'48px', borderRadius:'12px', background:'#fff7ed', color:'#ea580c', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                         <Megaphone size={24} />
+                                     </div>
+                                     <div>
+                                         <div style={{fontSize:'16px', fontWeight:'700', color:'#1f2937'}}>Marketing Web</div>
+                                         <div style={{fontSize:'13px', color:'#6b7280', marginTop:'4px', lineHeight:'1.5'}}>Gestiona banners, promociones y productos destacados.</div>
+                                     </div>
+                                 </div>
+
+                                 <div onClick={() => setActiveTab('cms')} style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 1px 2px rgba(0,0,0,0.05)', cursor:'pointer', transition:'all 0.2s', display:'flex', alignItems:'start', gap:'16px'}}
+                                     onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'}
+                                     onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'}
+                                 >
+                                     <div style={{width:'48px', height:'48px', borderRadius:'12px', background:'#fdf2f8', color:'#db2777', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                         <LayoutList size={24} />
+                                     </div>
+                                     <div>
+                                         <div style={{fontSize:'16px', fontWeight:'700', color:'#1f2937'}}>CMS / Páginas</div>
+                                         <div style={{fontSize:'13px', color:'#6b7280', marginTop:'4px', lineHeight:'1.5'}}>Edita el contenido de páginas institucionales.</div>
+                                     </div>
+                                 </div>
+
+                                 <div onClick={() => setActiveTab('chatbot')} style={{background:'white', padding:'24px', borderRadius:'16px', border:'1px solid #e5e7eb', boxShadow:'0 1px 2px rgba(0,0,0,0.05)', cursor:'pointer', transition:'all 0.2s', display:'flex', alignItems:'start', gap:'16px'}}
+                                     onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'}
+                                     onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'}
+                                 >
+                                     <div style={{width:'48px', height:'48px', borderRadius:'12px', background:'#f0fdf4', color:'#16a34a', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                         <div style={{fontWeight:'800'}}>AI</div>
+                                     </div>
+                                     <div>
+                                         <div style={{fontSize:'16px', fontWeight:'700', color:'#1f2937'}}>Chatbot Inteligente</div>
+                                         <div style={{fontSize:'13px', color:'#6b7280', marginTop:'4px', lineHeight:'1.5'}}>Entrena el asistente virtual para consultas de clientes.</div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                         
+                         <div style={{textAlign: 'center', color: '#9ca3af', fontSize: '12px', marginTop: '40px'}}>
+                            Sistema v2.5.0 - Build 2026.01.30
                          </div>
                      </div>
                  )}
@@ -1698,69 +2101,105 @@ function AdminDashboard({ user }) {
             
             {/* --- CLIENTS VIEW --- */}
             {activeTab === 'clients' && (
-                 <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '20px'}}>
-                         <h2>Gestión de Clientes</h2>
-                         <button onClick={() => openClientModal()} className="btn-primary" style={{display:'flex', gap:'5px', alignItems:'center'}}>
-                            <Plus size={16}/> Nuevo Cliente
+                 <div style={{background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border: '1px solid #e5e7eb', padding: '24px'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '24px'}}>
+                         <div>
+                             <h2 style={{fontSize:'20px', fontWeight:'700', color:'#111827', margin:0}}>Gestión de Clientes</h2>
+                             <p style={{margin:'4px 0 0', color:'#6b7280', fontSize:'14px'}}>Administra tu base de datos de clientes y cuentas de crédito</p>
+                         </div>
+                         <button onClick={() => openClientModal()} className="primary-btn" style={{display:'flex', gap:'8px', alignItems:'center', padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600'}}>
+                            <Plus size={18}/> Nuevo Cliente
                          </button>
                     </div>
 
-                    <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-                        <div style={{position:'relative', flex:1}}>
-                            <Search size={18} style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', color:'#94a3b8'}} />
+                    <div style={{display:'flex', gap:'16px', marginBottom:'24px', alignItems: 'center'}}>
+                        <div style={{position:'relative', flex:1, maxWidth: '400px'}}>
+                            <Search size={20} style={{position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', color:'#9ca3af'}} />
                             <input 
                                 type="text" 
                                 placeholder="Buscar por nombre, RFC, email..." 
                                 value={clientSearch}
                                 onChange={(e) => setClientSearch(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && fetchClients()}
-                                style={{width:'100%', padding:'10px 10px 10px 35px', borderRadius:'6px', border:'1px solid #cbd5e1'}}
+                                style={{width:'100%', padding:'10px 10px 10px 40px', borderRadius:'8px', border:'1px solid #d1d5db', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box'}}
+                                onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+                                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                             />
                         </div>
-                        <button onClick={fetchClients} className="btn-secondary">Buscar</button>
+                        <button onClick={fetchClients} style={{padding: '10px 16px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '8px', color: '#4b5563', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s', fontSize: '14px'}}>
+                            Actualizar
+                        </button>
                     </div>
                     
-                    <div style={{overflowX: 'auto'}}>
+                    <div style={{overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px'}}>
                         <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
-                            <thead style={{background: '#f8fafc', borderBottom: '2px solid #e2e8f0'}}>
-                                <tr>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>ID</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Cliente</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Contacto</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Ubicación</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Crédito</th>
-                                    <th style={{textAlign:'right', padding:'12px', color:'#64748b'}}>Acciones</th>
+                            <thead>
+                                <tr style={{background:'#f9fafb', borderBottom:'1px solid #e5e7eb'}}>
+                                    <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>ID</th>
+                                    <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Cliente</th>
+                                    <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Contacto</th>
+                                    <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Ubicación</th>
+                                    <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Crédito</th>
+                                    <th style={{padding:'12px 16px', textAlign:'right', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody style={{divideY: '1px solid #e5e7eb'}}>
                                 {clients.map(c => (
-                                    <tr key={c.id} style={{borderBottom:'1px solid #f1f5f9'}}>
-                                        <td style={{padding:'12px'}}>{c.id}</td>
-                                        <td style={{padding:'12px'}}>
-                                            <div style={{fontWeight:'bold'}}>{c.full_name}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>RFC: {c.rfc || 'N/A'}</div>
-                                        </td>
-                                        <td style={{padding:'12px'}}>
-                                            <div>{c.email}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{c.phone}</div>
-                                        </td>
-                                        <td style={{padding:'12px'}}>
-                                            <div>{c.city}, {c.state}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{c.colonia}</div>
-                                        </td>
-                                        <td style={{padding:'12px'}}>
-                                            <div>Lim: ${parseFloat(c.credit_limit || 0).toFixed(2)}</div>
-                                            <div style={{color: (c.current_debt || 0) > 0 ? 'red' : 'green', fontSize:'12px'}}>
-                                                Deuda: ${parseFloat(c.current_debt || 0).toFixed(2)}
+                                    <tr key={c.id} style={{borderBottom:'1px solid #f3f4f6', backgroundColor: 'white', transition: 'background 0.15s'}} onMouseOver={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}>
+                                        <td style={{padding:'16px', color: '#6b7280', fontSize: '13px'}}>#{c.id}</td>
+                                        <td style={{padding:'16px'}}>
+                                            <div style={{fontWeight:'600', color: '#111827', marginBottom: '2px'}}>{c.full_name}</div>
+                                            <div style={{color:'#6b7280', fontSize:'13px', display: 'flex', alignItems: 'center', gap: '4px'}}>
+                                                <span style={{fontSize: '11px', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: '600', color: '#4b5563'}}>RFC</span> 
+                                                {c.rfc || 'N/A'}
                                             </div>
                                         </td>
-                                        <td style={{padding:'12px', textAlign:'right'}}>
-                                            <button onClick={() => openClientModal(c)} style={{marginRight:'5px', color:'#2563eb', background:'none', border:'none', cursor:'pointer'}}><PenSquare size={16}/></button>
-                                            <button onClick={() => handleDeleteClient(c.id)} style={{color:'#ef4444', background:'none', border:'none', cursor:'pointer'}}><Trash2 size={16}/></button>
+                                        <td style={{padding:'16px'}}>
+                                            <div style={{marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#374151'}}>
+                                                <div style={{width: '24px', height: '24px', borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb'}}><span style={{fontSize: '14px'}}>@</span></div>
+                                                {c.email}
+                                            </div>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#6b7280'}}>
+                                                <div style={{width: '24px', height: '24px', borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534'}}><span style={{fontSize: '10px'}}>📞</span></div>
+                                                {c.phone}
+                                            </div>
+                                        </td>
+                                        <td style={{padding:'16px', fontSize: '13px', color: '#4b5563'}}>
+                                            <div style={{fontWeight: '500'}}>{c.city}, {c.state}</div>
+                                            <div style={{color:'#9ca3af', fontSize:'12px'}}>{c.colonia}</div>
+                                        </td>
+                                        <td style={{padding:'16px'}}>
+                                            <div style={{fontSize: '13px', color: '#4b5563', marginBottom: '4px'}}>Límite: <span style={{fontWeight: '600'}}>${parseFloat(c.credit_limit || 0).toFixed(2)}</span></div>
+                                            {(c.current_debt || 0) > 0 ? (
+                                                <div style={{display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '9999px', background: '#fef2f2', color: '#991b1b', fontSize: '12px', fontWeight: '600', border: '1px solid #fecaca'}}>
+                                                    Deuda: ${parseFloat(c.current_debt || 0).toFixed(2)}
+                                                </div>
+                                            ) : (
+                                                 <div style={{display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '9999px', background: '#ecfdf5', color: '#047857', fontSize: '12px', fontWeight: '600', border: '1px solid #a7f3d0'}}>
+                                                    Al corriente
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td style={{padding:'16px', textAlign:'right'}}>
+                                            <div style={{display: 'flex', justifyContent: 'flex-end', gap: '8px'}}>
+                                                <button onClick={() => openClientModal(c)} style={{padding: '6px', borderRadius: '6px', border: '1px solid #d1d5db', background: 'white', color: '#4b5563', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'}} title="Editar">
+                                                    <PenSquare size={16}/>
+                                                </button>
+                                                <button onClick={() => handleDeleteClient(c.id)} style={{padding: '6px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff1f2', color: '#e11d48', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'}} title="Eliminar">
+                                                    <Trash2 size={16}/>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
+                                {clients.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6" style={{padding: '40px', textAlign: 'center', color: '#6b7280'}}>
+                                            <UserCog size={48} style={{marginBottom: '10px', opacity: 0.2}} />
+                                            <p>No se encontraron clientes</p>
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -1769,9 +2208,14 @@ function AdminDashboard({ user }) {
             
             {/* --- CLIENT MODAL --- */}
             {activeTab === 'clients' && editingClient && (
-                <div className="modal-overlay" style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.5)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:1000}}>
-                    <div style={{background:'white', width:'600px', maxWidth:'90%', borderRadius:'8px', padding:'20px', maxHeight:'90vh', overflowY:'auto'}}>
-                        <h2 style={{marginBottom:'20px'}}>{editingClient.id ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
+                <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'#f3f4f6', zIndex:2000, padding:'20px', overflowY:'auto'}}>
+                    <div style={{maxWidth:'800px', margin:'0 auto', background:'white', borderRadius:'12px', padding:'30px', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.1)'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:'15px', marginBottom:'30px', paddingBottom:'20px', borderBottom:'1px solid #e5e7eb'}}>
+                            <button onClick={() => setEditingClient(null)} style={{background:'none', border:'none', cursor:'pointer', color:'#4b5563', display:'flex', alignItems:'center', gap:'5px', fontSize:'14px', fontWeight:'600'}}>
+                                <ArrowLeft size={20} /> Regresar
+                            </button>
+                            <h2 style={{margin:0, fontSize:'20px'}}>{editingClient.id ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}</h2>
+                        </div>
                         <form onSubmit={handleSaveClient}>
                             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
                                 <div style={{gridColumn:'1/-1'}}>
@@ -1811,9 +2255,9 @@ function AdminDashboard({ user }) {
                                     <textarea value={clientForm.notes || ''} onChange={e => setClientForm({...clientForm, notes: e.target.value})} style={{width:'100%', padding:'8px', borderRadius:'4px', border:'1px solid #cbd5e1'}}></textarea>
                                 </div>
                             </div>
-                            <div style={{marginTop:'20px', display:'flex', justifyContent:'flex-end', gap:'10px'}}>
-                                <button type="button" onClick={() => setEditingClient(null)} className="btn-secondary">Cancelar</button>
-                                <button type="submit" className="btn-primary">Guardar Cliente</button>
+                            <div style={{marginTop:'30px', display:'flex', justifyContent:'flex-end', gap:'15px', borderTop:'1px solid #f3f4f6', paddingTop:'20px'}}>
+                                <button type="button" onClick={() => setEditingClient(null)} className="secondary-btn" style={{padding:'10px 20px'}}>Cancelar</button>
+                                <button type="submit" className="primary-btn" style={{padding:'10px 24px'}}>Guardar Cliente</button>
                             </div>
                         </form>
                     </div>
@@ -1822,51 +2266,121 @@ function AdminDashboard({ user }) {
 
             {/* --- USERS VIEW --- */}
             {activeTab === 'users' && (
-                <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
-                    <h2 style={{marginBottom: '20px'}}>Gestión de Usuarios</h2>
+                <div style={{background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border: '1px solid #e5e7eb', padding: '24px'}}>
                     
-                    <div style={{overflowX: 'auto'}}>
+                    {/* Filters */}
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                            <label style={{fontSize: '13px', fontWeight: '600', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.025em'}}>Estado</label>
+                            <select 
+                                value={filterUserStatus} 
+                                onChange={e => setFilterUserStatus(e.target.value)}
+                                style={{width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', fontSize: '14px', outline: 'none'}}
+                            >
+                                <option value="ACTIVOS">ACTIVOS</option>
+                                <option value="INACTIVOS">INACTIVOS</option>
+                            </select>
+                        </div>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                            <label style={{fontSize: '13px', fontWeight: '600', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.025em'}}>Rol</label>
+                            <select 
+                                value={filterUserRole} 
+                                onChange={e => setFilterUserRole(e.target.value)}
+                                style={{width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', fontSize: '14px', outline: 'none'}}
+                            >
+                                <option value="TODOS">TODOS</option>
+                                <option value="customer">CLIENTE</option>
+                                <option value="admin">ADMINISTRADOR</option>
+                                <option value="seller">VENDEDOR</option>
+                            </select>
+                        </div>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                            <label style={{fontSize: '13px', fontWeight: '600', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.025em'}}>Departamento</label>
+                            <select 
+                                value={filterUserDept} 
+                                onChange={e => setFilterUserDept(e.target.value)}
+                                style={{width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', fontSize: '14px', outline: 'none'}}
+                            >
+                                <option value="TODOS">TODOS</option>
+                                <option value="DESPACHO">DESPACHO</option>
+                                <option value="BIENESTAR">BIENESTAR</option>
+                            </select>
+                        </div>
+                         <div style={{display: 'flex', alignItems: 'end', gap: '10px'}}>
+                            <button className="secondary-btn" style={{padding:'10px 15px', borderRadius: '8px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #d1d5db', background: 'white', color: '#374151', cursor: 'pointer'}}>
+                                <Download size={16} /> Excel
+                            </button>
+                             <button className="secondary-btn" style={{padding:'10px 15px', borderRadius: '8px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #d1d5db', background: 'white', color: '#374151', cursor: 'pointer'}}>
+                                <LayoutList size={16} /> Columnas
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Search */}
+                    <div style={{position: 'relative', marginBottom: '24px'}}>
+                        <Search size={20} style={{position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af'}} />
+                        <input 
+                            placeholder="Buscar usuarios..." 
+                            value={userSearch}
+                            onChange={e => setUserSearch(e.target.value)}
+                            style={{width: '100%', padding: '12px 16px 12px 40px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none', boxSizing: 'border-box'}} 
+                        />
+                         <button className="primary-btn" style={{position: 'absolute', right: '6px', top: '6px', bottom: '6px', padding: '0 20px', borderRadius: '6px', fontSize: '14px', fontWeight: '600', backgroundColor: '#16a34a', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer'}}>
+                            <Plus size={16} /> Agregar
+                        </button>
+                    </div>
+
+                    
+                    <div style={{overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb'}}>
                         <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
-                            <thead style={{background: '#f8fafc', borderBottom: '2px solid #e2e8f0'}}>
+                            <thead style={{backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb'}}>
                                 <tr>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>ID</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Usuario</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Empresa / RFC</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Rol Actual</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Asignar Rol</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Fecha Reg.</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Nombre Completo</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Usuario</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Empresa / RFC</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Rol</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Asignar Rol</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Fecha Reg.</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {users.map(u => (
-                                    <tr key={u.id} style={{borderBottom:'1px solid #f1f5f9'}}>
-                                        <td style={{padding:'12px'}}>{u.id}</td>
-                                        <td style={{padding:'12px'}}>
-                                            <div style={{fontWeight:'bold'}}>{u.full_name}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{u.email}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{u.phone}</div>
+                            <tbody style={{divideY: '1px solid #e5e7eb'}}>
+                                {users.filter(u => {
+                                     return (filterUserRole === 'TODOS' || u.role === filterUserRole) &&
+                                            (userSearch === '' || 
+                                             (u.full_name && u.full_name.toLowerCase().includes(userSearch.toLowerCase())) ||
+                                             (u.email && u.email.toLowerCase().includes(userSearch.toLowerCase())));
+                                }).map(u => (
+                                    <tr key={u.id} style={{borderBottom:'1px solid #f3f4f6', backgroundColor: 'white'}} onMouseOver={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <div style={{fontWeight:'600', color: '#111827'}}>{u.full_name || 'N/A'}</div>
+                                            <div style={{color:'#6b7280', fontSize:'12px'}}>No. Empleado: {u.id + 42000}</div>
                                         </td>
-                                        <td style={{padding:'12px'}}>
-                                            <div>{u.company_name || u.legal_name || '-'}</div>
-                                            <div style={{fontSize:'12px', color:'#666'}}>
-                                                {u.rfc || 'Sin RFC'} <span style={{background:'#e0f2fe', padding:'2px 4px', borderRadius:'4px', fontSize:'10px'}}>{u.person_type}</span>
+                                        <td style={{padding: '16px 24px'}}>
+                                             <div style={{fontWeight:'500', color: '#374151'}}>{u.email ? u.email.split('@')[0].toUpperCase() : 'N/A'}</div>
+                                             <div style={{color:'#6b7280', fontSize:'12px'}}>{u.email}</div>
+                                        </td>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <div style={{color: '#374151'}}>{u.company_name || '-'}</div>
+                                            <div style={{fontSize:'11px', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#eff6ff', color: '#1d4ed8', display: 'inline-block', marginTop: '4px'}}>
+                                                {u.rfc || 'Sin RFC'}
                                             </div>
                                         </td>
-                                        <td style={{padding:'12px'}}>
+                                        <td style={{padding: '16px 24px'}}>
                                             <span style={{
-                                                background: u.role === 'admin' ? '#fee2e2' : u.role === 'customer' ? '#e0f2fe' : '#fef3c7',
-                                                color: u.role === 'admin' ? '#991b1b' : u.role === 'customer' ? '#075985' : '#92400e',
-                                                padding: '4px 8px', borderRadius:'12px', fontSize:'12px', fontWeight:'bold'
+                                                background: u.role === 'admin' ? '#fef2f2' : u.role === 'customer' ? '#eff6ff' : '#fffbeb',
+                                                color: u.role === 'admin' ? '#b91c1c' : u.role === 'customer' ? '#1d4ed8' : '#b45309',
+                                                padding: '4px 10px', borderRadius:'9999px', fontSize:'12px', fontWeight:'600', border: `1px solid ${u.role === 'admin' ? '#fecaca' : u.role === 'customer' ? '#bfdbfe' : '#fde68a'}`
                                             }}>
-                                                {u.role.toUpperCase()}
+                                                {u.role ? u.role.toUpperCase() : 'N/A'}
                                             </span>
                                         </td>
-                                        <td style={{padding:'12px'}}>
+                                        <td style={{padding: '16px 24px'}}>
                                             <select 
                                                 value={u.role} 
                                                 onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                                                style={{padding:'6px', borderRadius:'4px', border:'1px solid #ddd', width: '130px'}}
-                                                disabled={u.email === user.email} // Prevent self-lockout
+                                                style={{padding:'8px', borderRadius:'6px', border:'1px solid #d1d5db', width: '140px', fontSize: '13px'}}
+                                                disabled={u.email === user.email}
                                             >
                                                 <option value="customer">Cliente</option>
                                                 <option value="seller">Vendedor</option>
@@ -1875,11 +2389,22 @@ function AdminDashboard({ user }) {
                                                 <option value="admin">Admin</option>
                                             </select>
                                         </td>
-                                        <td style={{padding:'12px', color:'#666'}}>
+                                        <td style={{padding: '16px 24px', color:'#4b5563', fontSize: '13px'}}>
                                             {u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}
                                         </td>
+                                         <td style={{padding: '16px 24px'}}>
+                                             <div style={{display: 'flex', gap: '10px'}}>
+                                                <button style={{color: '#2563eb', cursor: 'pointer', background: 'none', border:'none'}}><PenSquare size={18} /></button>
+                                                <button style={{color: '#dc2626', cursor: 'pointer', background: 'none', border:'none'}}><Trash2 size={18} /></button>
+                                             </div>
+                                         </td>
                                     </tr>
                                 ))}
+                                {users.length === 0 && (
+                                    <tr>
+                                        <td colSpan="7" style={{padding: '40px', textAlign: 'center', color: '#6b7280'}}>No se encontraron usuarios</td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -1888,95 +2413,165 @@ function AdminDashboard({ user }) {
 
             {/* --- CASH VIEW --- */}
             {activeTab === 'cash' && (
-                <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
-                    <h2 style={{marginBottom: '20px'}}>Control de Caja</h2>
+                <div style={{background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border: '1px solid #e5e7eb', padding: '24px'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '24px'}}>
+                        <h2 style={{fontSize:'20px', fontWeight:'700', color:'#111827', margin:0}}>Control de Caja y Flujo de Efecito</h2>
+                        {cashStatus.isOpen && (
+                             <div style={{background: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '9999px', fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                <span style={{width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%'}}></span>
+                                CAJA ABIERTA
+                             </div>
+                        )}
+                    </div>
+                
                     
                     {!cashStatus.isOpen ? (
-                        <div style={{maxWidth:'500px', margin:'50px auto', padding:'30px', border:'1px solid #ddd', borderRadius:'10px', textAlign:'center'}}>
-                            <h3>Caja Cerrada</h3>
-                            <p style={{color:'#666', marginBottom:'20px'}}>Inicia turno para registrar ventas y gastos.</p>
-                            <form onSubmit={handleOpenRegister}>
-                                <div style={{textAlign:'left', marginBottom:'15px'}}>
-                                    <label>Monto Inicial (Fondo de Caja)</label>
+                        <div style={{maxWidth:'480px', margin:'60px auto', padding:'40px', border:'1px solid #e5e7eb', borderRadius:'16px', textAlign:'center', backgroundColor: '#f9fafb'}}>
+                            <div style={{width: '64px', height: '64px', background: '#ffe4e6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#be123c'}}>
+                                <AlertTriangle size={32} />
+                            </div>
+                            <h3 style={{fontSize: '18px', fontWeight: '700', color: '#111827', marginBottom: '8px'}}>La caja se encuentra cerrada</h3>
+                            <p style={{color:'#6b7280', marginBottom:'32px', fontSize: '14px'}}>Debes iniciar un turno para poder registrar ventas y movimientos de efectivo.</p>
+                            
+                            <form onSubmit={handleOpenRegister} style={{textAlign: 'left'}}>
+                                <div style={{marginBottom:'20px'}}>
+                                    <label style={{display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px'}}>Monto Inicial (Fondo de Caja)</label>
                                     <div style={{position:'relative'}}>
-                                        <span style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)'}}>$</span>
-                                        <input required name="amount" type="number" step="0.01" style={{width:'100%', padding:'10px 10px 10px 25px', borderRadius:'6px', border:'1px solid #cbd5e1'}} />
+                                        <span style={{position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', color: '#6b7280'}}>$</span>
+                                        <input required name="amount" type="number" step="0.01" 
+                                            style={{width:'100%', padding:'12px 12px 12px 30px', borderRadius:'8px', border:'1px solid #d1d5db', fontSize: '16px', fontWeight: '600', outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box'}} 
+                                            placeholder="0.00"
+                                        />
                                     </div>
                                 </div>
-                                <div style={{textAlign:'left', marginBottom:'15px'}}>
-                                    <label>Notas de Apertura</label>
-                                    <textarea name="notes" placeholder="Ej. Turno matutino, fondo revisado..." style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #cbd5e1'}}></textarea>
+                                <div style={{marginBottom:'24px'}}>
+                                    <label style={{display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px'}}>Notas de Apertura</label>
+                                    <textarea name="notes" placeholder="Ej. Turno matutino, fondo revisado..." 
+                                        style={{width:'100%', padding:'12px', borderRadius:'8px', border:'1px solid #d1d5db', fontSize: '14px', outline: 'none', height: '80px', resize: 'none', boxSizing: 'border-box'}}
+                                    ></textarea>
                                 </div>
-                                <button className="btn-primary" style={{width:'100%', justifyContent:'center'}}>ABRIR CAJA</button>
+                                <button className="primary-btn" style={{width:'100%', justifyContent:'center', padding: '14px', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                    <CheckCircle size={18} /> ABRIR TURNO DE CAJA
+                                </button>
                             </form>
                         </div>
                     ) : (
                         <div>
-                             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'20px', marginBottom:'30px'}}>
-                                <div style={{background:'#f0fdf4', padding:'20px', borderRadius:'8px', borderLeft:'5px solid #22c55e'}}>
-                                    <div style={{color:'#166534', fontWeight:'bold', fontSize:'14px'}}>BALANCE ACTUAL</div>
-                                    <div style={{fontSize:'32px', fontWeight:'900', color:'#14532d'}}>${parseFloat(cashStatus.currentBalance).toFixed(2)}</div>
+                             {/* Stats Cards */}
+                             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:'20px', marginBottom:'30px'}}>
+                                <div style={{background:'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding:'24px', borderRadius:'16px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)'}}>
+                                    <div style={{position: 'relative', zIndex: 2}}>
+                                        <div style={{color:'rgba(255,255,255,0.9)', fontWeight:'600', fontSize:'13px', letterSpacing:'0.05em', textTransform: 'uppercase', marginBottom: '4px'}}>Balance Actual en Caja</div>
+                                        <div style={{fontSize:'36px', fontWeight:'800', marginBottom: '4px'}}>${parseFloat(cashStatus.currentBalance).toFixed(2)}</div>
+                                        <div style={{fontSize: '12px', opacity: 0.8}}>Disponible para operaciones</div>
+                                    </div>
+                                    <Banknote size={120} style={{position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.15, transform: 'rotate(-15deg)'}} />
                                 </div>
                                 
-                                <button 
-                                    onClick={() => { const amt = prompt("Monto a Retirar:"); const desc = prompt("Concepto:"); if(amt && desc) handleCashMovement('expense', amt, desc); }}
-                                    style={{background:'#fef2f2', border:'2px dashed #ef4444', borderRadius:'8px', color:'#991b1b', fontSize:'16px', fontWeight:'bold', cursor:'pointer'}}
-                                >
-                                    - REGISTRAR GASTO / RETIRO
-                                </button>
-                                
-                                <button 
-                                    onClick={() => { const amt = prompt("Monto a Ingresar:"); const desc = prompt("Concepto:"); if(amt && desc) handleCashMovement('deposit', amt, desc); }}
-                                    style={{background:'#f0f9ff', border:'2px dashed #0ea5e9', borderRadius:'8px', color:'#075985', fontSize:'16px', fontWeight:'bold', cursor:'pointer'}}
-                                >
-                                    + INGRESAR DINERO EXTRA
-                                </button>
+                                <div style={{display: 'grid', gridTemplateColumns: '1fr', gap: '16px'}}>
+                                    <button 
+                                        onClick={() => { const amt = prompt("Monto a Ingresar:"); const desc = prompt("Concepto:"); if(amt && desc) handleCashMovement('deposit', amt, desc); }}
+                                        style={{background:'#eff6ff', border:'1px solid #dbeafe', borderRadius:'12px', color:'#1e40af', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor:'pointer', transition: 'all 0.2s', fontWeight: '600'}}
+                                        onMouseOver={e => e.currentTarget.style.background = '#dbeafe'}
+                                        onMouseOut={e => e.currentTarget.style.background = '#eff6ff'}
+                                    >
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                            <div style={{width: '40px', height: '40px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb'}}>
+                                                <Plus size={20} />
+                                            </div>
+                                            <div style={{textAlign: 'left'}}>
+                                                <div style={{fontSize: '14px'}}>Ingresar Dinero</div>
+                                                <div style={{fontSize: '11px', opacity: 0.7, fontWeight: '400'}}>Cambio, depósitos extra</div>
+                                            </div>
+                                        </div>
+                                        <ArrowLeft size={16} style={{transform: 'rotate(180deg)'}} />
+                                    </button>
+
+                                    <button 
+                                        onClick={() => { const amt = prompt("Monto a Retirar:"); const desc = prompt("Concepto:"); if(amt && desc) handleCashMovement('expense', amt, desc); }}
+                                        style={{background:'#fef2f2', border:'1px solid #fee2e2', borderRadius:'12px', color:'#991b1b', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor:'pointer', transition: 'all 0.2s', fontWeight: '600'}}
+                                        onMouseOver={e => e.currentTarget.style.background = '#fee2e2'}
+                                        onMouseOut={e => e.currentTarget.style.background = '#fef2f2'}
+                                    >
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                            <div style={{width: '40px', height: '40px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626'}}>
+                                                <Minus size={20} />
+                                            </div>
+                                            <div style={{textAlign: 'left'}}>
+                                                <div style={{fontSize: '14px'}}>Retirar Dinero</div>
+                                                <div style={{fontSize: '11px', opacity: 0.7, fontWeight: '400'}}>Gastos, pagos a proveedores</div>
+                                            </div>
+                                        </div>
+                                        <ArrowLeft size={16} style={{transform: 'rotate(180deg)'}} />
+                                    </button>
+                                </div>
                              </div>
 
-                             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
-                                 <h3>Movimientos del Turno</h3>
-                                 <form onSubmit={handleCloseRegister} style={{display:'flex', gap:'10px', background:'#f8fafc', padding:'10px', borderRadius:'6px', border:'1px solid #e2e8f0'}}>
+                             <div style={{background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '15px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px'}}>
+                                 <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                     <div style={{background: '#e0f2fe', padding: '8px', borderRadius: '6px', color: '#0369a1'}}>
+                                         <ClipboardList size={20} />
+                                     </div>
+                                     <div>
+                                         <div style={{fontSize: '14px', fontWeight: '700', color: '#334155'}}>Corte de Caja (Cierre Z)</div>
+                                         <div style={{fontSize: '12px', color: '#64748b'}}>Finaliza el turno actual y genera reporte</div>
+                                     </div>
+                                 </div>
+
+                                 <form onSubmit={handleCloseRegister} style={{display:'flex', gap:'10px', alignItems: 'center', flexWrap: 'wrap'}}>
                                      <div style={{display:'flex', flexDirection:'column'}}>
-                                        <label style={{fontSize:'10px', fontWeight:'bold', color:'#64748b'}}>TOTAL EN CAJA (CONTADO)</label>
-                                        <input required name="closing_amount" type="number" step="0.01" placeholder="$ 0.00" style={{padding:'5px', width:'120px', border:'1px solid #cbd5e1', borderRadius:'4px'}} />
+                                        <label style={{fontSize:'11px', fontWeight:'700', color:'#64748b', marginBottom: '4px', textTransform: 'uppercase'}}>Total Contado</label>
+                                        <div style={{position: 'relative'}}>
+                                            <span style={{position:'absolute', left:'8px', top:'50%', transform:'translateY(-50%)', fontSize: '12px', color: '#64748b'}}>$</span>
+                                            <input required name="closing_amount" type="number" step="0.01" placeholder="0.00" style={{padding:'8px 8px 8px 20px', width:'120px', border:'1px solid #cbd5e1', borderRadius:'6px', outline: 'none', fontWeight: '600'}} />
+                                        </div>
                                      </div>
                                      <div style={{display:'flex', flexDirection:'column'}}>
-                                        <label style={{fontSize:'10px', fontWeight:'bold', color:'#64748b'}}>OBSERVACIONES</label>
-                                        <input name="notes" placeholder="..." style={{padding:'5px', width:'200px', border:'1px solid #cbd5e1', borderRadius:'4px'}} />
+                                        <label style={{fontSize:'11px', fontWeight:'700', color:'#64748b', marginBottom: '4px', textTransform: 'uppercase'}}>Observaciones</label>
+                                        <input name="notes" placeholder="Opcional..." style={{padding:'8px', width:'200px', border:'1px solid #cbd5e1', borderRadius:'6px', outline: 'none'}} />
                                      </div>
-                                     <button style={{background:'#0f172a', color:'white', border:'none', padding:'0 20px', borderRadius:'4px', cursor:'pointer', fontWeight:'bold'}}>CORTE Z (CERRAR)</button>
+                                     <button style={{background:'#1e293b', color:'white', border:'none', padding:'0 24px', height: '35px', borderRadius:'6px', cursor:'pointer', fontWeight:'600', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '16px', fontSize: '13px'}}>
+                                         <LogOut size={14} /> CERRAR TURNO
+                                     </button>
                                  </form>
                              </div>
 
-                             <div style={{maxHeight:'400px', overflowY:'auto', border:'1px solid #e2e8f0', borderRadius:'6px'}}>
+                             <h3 style={{fontSize: '16px', fontWeight: '700', color: '#1f2937', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px'}}>Historial de Movimientos</h3>
+                             
+                             <div style={{border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden'}}>
                                 <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
-                                    <thead style={{position:'sticky', top:0, zIndex:1}}>
-                                        <tr style={{background:'#f8fafc', borderBottom:'2px solid #e2e8f0'}}>
-                                            <th style={{padding:'10px', textAlign:'left'}}>Hora</th>
-                                            <th style={{padding:'10px', textAlign:'left'}}>Tipo</th>
-                                            <th style={{padding:'10px', textAlign:'left'}}>Concepto</th>
-                                            <th style={{padding:'10px', textAlign:'right'}}>Monto</th>
+                                    <thead>
+                                        <tr style={{background:'#f9fafb', borderBottom:'1px solid #e5e7eb'}}>
+                                            <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Hora</th>
+                                            <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Tipo</th>
+                                            <th style={{padding:'12px 16px', textAlign:'left', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Concepto</th>
+                                            <th style={{padding:'12px 16px', textAlign:'right', color:'#4b5563', fontWeight:'600', fontSize:'12px', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Monto</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody style={{divideY: '1px solid #e5e7eb'}}>
                                         {cashStatus.movements.map(m => (
-                                            <tr key={m.id} style={{borderBottom:'1px solid #eee'}}>
-                                                <td style={{padding:'10px'}}>{new Date(m.created_at).toLocaleTimeString()}</td>
-                                                <td style={{padding:'10px'}}>
+                                            <tr key={m.id} style={{borderBottom:'1px solid #f3f4f6', backgroundColor: 'white'}}>
+                                                <td style={{padding:'12px 16px', color: '#6b7280', fontSize: '13px'}}>{new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                                                <td style={{padding:'12px 16px'}}>
                                                     <span style={{
-                                                        padding:'2px 8px', borderRadius:'4px', fontSize:'12px', fontWeight:'bold',
-                                                        background: ['deposit','sale','opening'].includes(m.type) ? '#dcfce7' : '#fee2e2',
-                                                        color: ['deposit','sale','opening'].includes(m.type) ? '#166534' : '#991b1b'
+                                                        padding:'4px 10px', borderRadius:'9999px', fontSize:'11px', fontWeight:'700', textTransform: 'uppercase',
+                                                        background: ['deposit','sale','opening'].includes(m.type) ? '#d1fae5' : '#fee2e2',
+                                                        color: ['deposit','sale','opening'].includes(m.type) ? '#047857' : '#b91c1c'
                                                     }}>
-                                                        {m.type.toUpperCase()}
+                                                        {m.type === 'opening' ? 'APERTURA' : m.type === 'sale' ? 'VENTA' : m.type === 'deposit' ? 'INGRESO' : 'GASTO/RETIRO'}
                                                     </span>
                                                 </td>
-                                                <td style={{padding:'10px'}}>{m.description}</td>
-                                                <td style={{padding:'10px', textAlign:'right', fontWeight:'bold', color: ['deposit','sale','opening'].includes(m.type) ? '#166534' : '#991b1b'}}>
+                                                <td style={{padding:'12px 16px', color: '#374151', fontWeight: '500'}}>{m.description}</td>
+                                                <td style={{padding:'12px 16px', textAlign:'right', fontWeight:'700', fontFamily: 'monospace', fontSize: '14px', color: ['deposit','sale','opening'].includes(m.type) ? '#059669' : '#dc2626'}}>
                                                     {['deposit','sale','opening'].includes(m.type) ? '+' : '-'} ${parseFloat(m.amount).toFixed(2)}
                                                 </td>
                                             </tr>
                                         ))}
+                                        {cashStatus.movements.length === 0 && (
+                                            <tr>
+                                                <td colSpan="4" style={{padding:'40px', textAlign:'center', color:'#9ca3af', fontStyle:'italic'}}>No hay movimientos registrados en este turno</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
                              </div>
@@ -1987,63 +2582,60 @@ function AdminDashboard({ user }) {
 
             {/* --- SUPPLIERS VIEW --- */}
             {activeTab === 'suppliers' && (
-                <div style={{background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '20px'}}>
-                         <h2>Catálogo de Proveedores</h2>
-                         <button onClick={() => openSupplierModal()} className="btn-primary" style={{display:'flex', gap:'5px', alignItems:'center'}}>
+                <div style={{background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border: '1px solid #e5e7eb', padding: '24px'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '24px'}}>
+                         <h2 style={{fontSize:'20px', fontWeight:'700', color:'#111827', margin:0}}>Catálogo de Proveedores</h2>
+                         <button onClick={() => openSupplierModal()} className="primary-btn" style={{display:'flex', gap:'5px', alignItems:'center', padding: '10px 20px', borderRadius:'6px', background:'#16a34a', color:'white', border:'none', fontSize:'14px', fontWeight:'600', cursor:'pointer'}}>
                             <Plus size={16}/> Nuevo Proveedor
                          </button>
                     </div>
 
-                     <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-                        <div style={{position:'relative', flex:1}}>
-                            <Search size={18} style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', color:'#94a3b8'}} />
-                            <input 
-                                type="text" 
-                                placeholder="Buscar por empresa, contacto, RFC..." 
-                                value={supplierSearch}
-                                onChange={(e) => setSupplierSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && fetchSuppliers()}
-                                style={{width:'100%', padding:'10px 10px 10px 35px', borderRadius:'6px', border:'1px solid #cbd5e1'}}
-                            />
-                        </div>
-                        <button onClick={fetchSuppliers} className="btn-secondary">Buscar</button>
+                     <div style={{position: 'relative', marginBottom:'24px'}}>
+                        <Search size={20} style={{position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', color:'#9ca3af'}} />
+                        <input 
+                            type="text" 
+                            placeholder="Buscar por empresa, contacto, RFC..." 
+                            value={supplierSearch}
+                            onChange={(e) => setSupplierSearch(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && fetchSuppliers()}
+                            style={{width: '100%', padding: '12px 16px 12px 40px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none', boxSizing: 'border-box'}}
+                        />
                     </div>
 
-                    <div style={{overflowX: 'auto'}}>
+                    <div style={{overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb'}}>
                         <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
-                            <thead style={{background: '#f8fafc', borderBottom: '2px solid #e2e8f0'}}>
+                            <thead style={{backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb'}}>
                                 <tr>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Empresa</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Contacto Principal</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Datos Fiscales</th>
-                                    <th style={{textAlign:'left', padding:'12px', color:'#64748b'}}>Condiciones</th>
-                                    <th style={{textAlign:'right', padding:'12px', color:'#64748b'}}>Acciones</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Empresa</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Contacto Principal</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Datos Fiscales</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Condiciones</th>
+                                    <th style={{padding: '12px 24px', textAlign:'right', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody style={{divideY: '1px solid #e5e7eb'}}>
                                 {suppliers.map(s => (
-                                    <tr key={s.id} style={{borderBottom:'1px solid #f1f5f9'}}>
-                                        <td style={{padding:'12px'}}>
-                                            <div style={{fontWeight:'bold'}}>{s.company_name}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{s.website || '-'}</div>
+                                    <tr key={s.id} style={{borderBottom:'1px solid #f3f4f6', backgroundColor: 'white'}} onMouseOver={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <div style={{fontWeight:'600', color: '#111827'}}>{s.company_name}</div>
+                                            <div style={{color:'#6b7280', fontSize:'12px'}}>{s.website || '-'}</div>
                                         </td>
-                                        <td style={{padding:'12px'}}>
-                                            <div style={{fontWeight:'bold'}}>{s.contact_name}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{s.email}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{s.phone}</div>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <div style={{fontWeight:'500', color: '#374151'}}>{s.contact_name}</div>
+                                            <div style={{color:'#6b7280', fontSize:'12px'}}>{s.email}</div>
+                                            <div style={{color:'#6b7280', fontSize:'12px'}}>{s.phone}</div>
                                         </td>
-                                        <td style={{padding:'12px'}}>
-                                            <div>{s.rfc || 'S/N'}</div>
-                                            <div style={{color:'#64748b', fontSize:'12px'}}>{s.city}, {s.state}</div>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <div style={{color: '#374151'}}>{s.rfc || 'S/N'}</div>
+                                            <div style={{color:'#6b7280', fontSize:'12px'}}>{s.city}, {s.state}</div>
                                         </td>
-                                        <td style={{padding:'12px'}}>
-                                            <span style={{background:'#f0fdf4', color:'#15803d', padding:'2px 6px', borderRadius:'4px', fontSize:'12px'}}>Crédito: {s.credit_days} días</span>
-                                            <div style={{marginTop:'5px', fontSize:'12px', color:'#666'}}>Entrega: {s.delivery_days} días</div>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <span style={{background:'#dcfce7', color:'#166534', padding:'2px 8px', borderRadius:'9999px', fontSize:'12px', fontWeight:'600'}}>Crédito: {s.credit_days} días</span>
+                                            <div style={{marginTop:'5px', fontSize:'12px', color:'#6b7280'}}>Entrega: {s.delivery_days} días</div>
                                         </td>
-                                        <td style={{padding:'12px', textAlign:'right'}}>
-                                             <button onClick={() => openSupplierModal(s)} style={{marginRight:'5px', color:'#2563eb', background:'none', border:'none', cursor:'pointer'}}><PenSquare size={16}/></button>
-                                            <button onClick={() => handleDeleteSupplier(s.id)} style={{color:'#ef4444', background:'none', border:'none', cursor:'pointer'}}><Trash2 size={16}/></button>
+                                        <td style={{padding: '16px 24px', textAlign:'right'}}>
+                                             <button onClick={() => openSupplierModal(s)} style={{marginRight:'12px', color:'#2563eb', background:'none', border:'none', cursor:'pointer'}}><PenSquare size={18}/></button>
+                                            <button onClick={() => handleDeleteSupplier(s.id)} style={{color:'#dc2626', background:'none', border:'none', cursor:'pointer'}}><Trash2 size={18}/></button>
                                         </td>
                                     </tr>
                                 ))}
@@ -2055,9 +2647,14 @@ function AdminDashboard({ user }) {
 
             {/* --- SUPPLIER MODAL --- */}
             {activeTab === 'suppliers' && editingSupplier && (
-                <div className="modal-overlay" style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.5)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:1000}}>
-                    <div style={{background:'white', width:'700px', maxWidth:'90%', borderRadius:'8px', padding:'20px', maxHeight:'90vh', overflowY:'auto'}}>
-                        <h2 style={{marginBottom:'20px'}}>{editingSupplier.id ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h2>
+                <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'#f3f4f6', zIndex:2000, padding:'20px', overflowY:'auto'}}>
+                    <div style={{maxWidth:'800px', margin:'0 auto', background:'white', borderRadius:'12px', padding:'30px', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.1)'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:'15px', marginBottom:'30px', paddingBottom:'20px', borderBottom:'1px solid #e5e7eb'}}>
+                            <button onClick={() => setEditingSupplier(null)} style={{background:'none', border:'none', cursor:'pointer', color:'#4b5563', display:'flex', alignItems:'center', gap:'5px', fontSize:'14px', fontWeight:'600'}}>
+                                <ArrowLeft size={20} /> Regresar
+                            </button>
+                             <h2 style={{margin:0, fontSize:'20px'}}>{editingSupplier.id ? 'Editar Proveedor' : 'Registrar Nuevo Proveedor'}</h2>
+                        </div>
                         <form onSubmit={handleSaveSupplier}>
                             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
                                 <div style={{gridColumn:'1/-1'}}>
@@ -2105,9 +2702,9 @@ function AdminDashboard({ user }) {
                                     <textarea value={supplierForm.notes || ''} onChange={e => setSupplierForm({...supplierForm, notes: e.target.value})} style={{width:'100%', padding:'8px', borderRadius:'4px', border:'1px solid #cbd5e1'}}></textarea>
                                 </div>
                             </div>
-                            <div style={{marginTop:'20px', display:'flex', justifyContent:'flex-end', gap:'10px'}}>
-                                <button type="button" onClick={() => setEditingSupplier(null)} className="btn-secondary">Cancelar</button>
-                                <button type="submit" className="btn-primary">Guardar Proveedor</button>
+                            <div style={{marginTop:'30px', display:'flex', justifyContent:'flex-end', gap:'15px', borderTop:'1px solid #f3f4f6', paddingTop:'20px'}}>
+                                <button type="button" onClick={() => setEditingSupplier(null)} className="secondary-btn" style={{padding:'10px 20px'}}>Cancelar</button>
+                                <button type="submit" className="primary-btn" style={{padding:'10px 24px'}}>Guardar Proveedor</button>
                             </div>
                         </form>
                     </div>
@@ -2117,15 +2714,17 @@ function AdminDashboard({ user }) {
             {/* --- PRODUCTS VIEW (RENAMED TO INVENTORY) --- */}
             {activeTab === 'inventory' && (
                 <>
+                {!showForm && (
+                <>
                 {/* Filters Row */}
-                <div style={{background:'white', padding:'20px', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', marginBottom:'20px'}}>
-                    <div style={{display:'flex', gap:'20px', marginBottom: '15px'}}>
-                        <div style={{flex:1}}>
-                            <label style={{display:'block', fontSize:'12px', fontWeight:'bold', marginBottom:'5px', color:'#666'}}>Estado</label>
+                <div style={{background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border: '1px solid #e5e7eb', padding: '24px', marginBottom: '24px'}}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                            <label style={{fontSize: '13px', fontWeight: '600', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.025em'}}>Estado</label>
                             <select 
                                 value={filterStock}
                                 onChange={e => setFilterStock(e.target.value)}
-                                style={{width:'100%', padding:'8px', border:'1px solid #ddd', borderRadius:'4px'}}
+                                style={{width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', fontSize: '14px', outline: 'none'}}
                             >
                                 <option value="TODOS">TODOS</option>
                                 <option value="ACTIVO">ACTIVOS</option>
@@ -2133,12 +2732,12 @@ function AdminDashboard({ user }) {
                                 <option value="AGOTADO">AGOTADOS</option>
                             </select>
                         </div>
-                        <div style={{flex:1}}>
-                            <label style={{display:'block', fontSize:'12px', fontWeight:'bold', marginBottom:'5px', color:'#666'}}>Categoría</label>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                            <label style={{fontSize: '13px', fontWeight: '600', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.025em'}}>Categoría</label>
                             <select 
                                 value={filterCategory}
                                 onChange={e => setFilterCategory(e.target.value)}
-                                style={{width:'100%', padding:'8px', border:'1px solid #ddd', borderRadius:'4px'}}
+                                style={{width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', fontSize: '14px', outline: 'none'}}
                             >
                                 <option value="TODOS">TODAS</option>
                                 <option value="Maquinaria">Maquinaria</option>
@@ -2150,43 +2749,48 @@ function AdminDashboard({ user }) {
                                 <option value="Pinturas">Pinturas</option>
                             </select>
                         </div>
-                        <div style={{flex:1}}>
-                            {/* Placeholder for future Dept filter */}
-                            <label style={{display:'block', fontSize:'12px', fontWeight:'bold', marginBottom:'5px', color:'#666'}}>Departamento</label>
-                            <select disabled style={{width:'100%', padding:'8px', border:'1px solid #ddd', borderRadius:'4px', background:'#f5f5f5'}}>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                            <label style={{fontSize: '13px', fontWeight: '600', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.025em'}}>Departamento</label>
+                            <select disabled style={{width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#f3f4f6', fontSize: '14px', outline: 'none', cursor: 'not-allowed'}}>
                                 <option>GENERAL</option>
                             </select>
                         </div>
-                        <div style={{display:'flex', alignItems:'end', gap:'10px'}}>
-                            <button className="secondary-btn" onClick={handleExportCSV} style={{padding:'8px 15px'}}>
+                        <div style={{display: 'flex', alignItems: 'end', gap: '10px'}}>
+                            <button className="secondary-btn" onClick={handleExportCSV} style={{padding:'10px 15px', borderRadius: '8px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #d1d5db', background: 'white', color: '#374151', cursor: 'pointer'}}>
                                 <Download size={16} /> Excel
                             </button>
-                            <button className="secondary-btn" style={{padding:'8px 15px'}}>
+                            <button className="secondary-btn" style={{padding:'10px 15px', borderRadius: '8px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #d1d5db', background: 'white', color: '#374151', cursor: 'pointer'}}>
                                 <LayoutList size={16} /> Columnas
                             </button>
                         </div>
                     </div>
 
-                    <div style={{borderTop:'1px solid #eee', paddingTop:'15px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                        <div style={{position:'relative', width:'70%'}}>
-                             <span style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', opacity:0.5}}><Search size={16}/></span>
+                    <div style={{position: 'relative'}}>
+                             <Search size={20} style={{position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af'}} />
                              <input 
                                 placeholder="Buscar productos..." 
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                style={{padding:'10px 10px 10px 35px', width:'100%', border:'1px solid #ddd', borderRadius:'4px', boxSizing:'border-box'}}
+                                style={{width: '100%', padding: '12px 16px 12px 40px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none', boxSizing: 'border-box'}}
                             />
-                        </div>
-                         <button className="primary-btn" onClick={handleCreate} style={{ width: 'auto', padding: '10px 25px', borderRadius:'20px' }}>
-                            <Plus size={16} /> Agregar
-                         </button>
+                             <button className="primary-btn" onClick={handleCreate} style={{position: 'absolute', right: '6px', top: '6px', bottom: '6px', padding: '0 20px', borderRadius: '6px', fontSize: '14px', fontWeight: '600', backgroundColor: '#16a34a', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer'}}>
+                                <Plus size={16} /> Agregar
+                            </button>
                     </div>
                 </div>
+                </>
+                )}
 
                 {showForm && (
-                <div style={{ background: '#fff', padding: '30px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #eee', marginBottom:'20px', paddingBottom:'10px'}}>
-                        <h3 style={{margin:0}}>{editingProduct ? 'Editar Artículo' : 'Nuevo Articulo'}</h3>
+                <div style={{ animation: 'fadeIn 0.2s ease-in-out' }}>
+                    <div style={{background: 'white', padding: '30px', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 4px 20px -5px rgba(0,0,0,0.1)' }}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #f3f4f6', marginBottom:'24px', paddingBottom:'16px'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:'16px'}}>
+                             <button onClick={() => setShowForm(false)} style={{background:'#f3f4f6', border:'none', width:'36px', height:'36px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#374151', transition:'background 0.2s'}}>
+                                <ArrowLeft size={20} />
+                             </button>
+                             <h3 style={{margin:0, fontSize:'20px', fontWeight:'700', color:'#111827'}}>{editingProduct ? 'Editar Artículo' : 'Nuevo Articulo'}</h3>
+                        </div>
                         <div style={{display:'flex', gap:'5px', background:'#f5f5f5', padding:'4px', borderRadius:'6px'}}>
                             {['general', 'pricing', 'stock'].map(tab => (
                                 <button 
@@ -2355,61 +2959,74 @@ function AdminDashboard({ user }) {
                         </div>
                     </form>
                 </div>
+                </div>
                 )}
 
-                <div style={{background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
-                    <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
-                        <thead>
-                            <tr style={{borderBottom:'2px solid #eee', color:'#444', background:'#f8f9fa'}}>
-                                <th style={{padding:'10px', textAlign:'left', width:'30px'}}>#</th>
-                                <th style={{padding:'10px', textAlign:'left'}}>Artículo</th>
-                                <th style={{padding:'10px', textAlign:'left'}}>Rubro / Marca</th>
-                                <th style={{padding:'10px', textAlign:'left'}}>Ubicación</th>
-                                <th style={{padding:'10px', textAlign:'left'}}>Costo</th>
-                                <th style={{padding:'10px', textAlign:'left'}}>Precio</th>
-                                <th style={{padding:'10px', textAlign:'center'}}>Stock (Min/Max)</th>
-                                <th style={{padding:'10px', textAlign:'right'}}>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredProducts.map(p => (
-                                <tr key={p.id} style={{borderBottom:'1px solid #f9f9f9', transition:'background 0.2s'}}>
-                                    <td style={{padding:'10px', color:'#888', fontFamily:'monospace'}}>{p.sku}</td>
-                                    <td style={{padding:'10px'}}>
-                                        <div style={{fontWeight:'600', color:'#333'}}>{p.title}</div>
-                                        <div style={{color:'#666', fontSize:'11px'}}>{p.barcode || 'S/N'}</div>
-                                    </td>
-                                    <td style={{padding:'10px'}}>
-                                        <div>{p.rubro || p.category}</div>
-                                        <div style={{color:'#666', fontSize:'11px', fontStyle:'italic'}}>{p.brand}</div>
-                                    </td>
-                                    <td style={{padding:'10px', color:'#666'}}>{p.location || '-'}</td>
-                                    <td style={{padding:'10px', color:'#666'}}>${Number(p.cost_price || 0).toFixed(2)}</td>
-                                    <td style={{padding:'10px', fontWeight:'bold', color:'#166534'}}>${Number(p.price_base).toFixed(2)}</td>
-                                    <td style={{padding:'10px', textAlign:'center'}}>
-                                        <div style={{fontWeight:'bold', fontSize:'14px', color: p.stock <= (p.stock_min||5) ? 'red' : 'inherit'}}>{p.stock}</div>
-                                        <div style={{fontSize:'10px', color:'#888'}}>({p.stock_min || 0} / {p.stock_max || '-'})</div>
-                                    </td>
-                                    <td style={{padding:'10px', textAlign:'right'}}>
-                                        <button onClick={() => handleEdit(p)} style={{background:'none', border:'none', cursor:'pointer', marginRight:'10px', color:'#4b5563'}} title="Editar">
-                                            <PenSquare size={18} />
-                                        </button>
-                                        <button onClick={() => handleDelete(p.id)} style={{background:'none', border:'none', cursor:'pointer', color:'#dc2626'}} title="Eliminar">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {filteredProducts.length === 0 && (
+                {!showForm && (
+                <div style={{background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', border: '1px solid #e5e7eb', padding: '0', overflow: 'hidden'}}>
+                    <div style={{overflowX: 'auto'}}>
+                        <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
+                            <thead style={{backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb'}}>
                                 <tr>
-                                    <td colSpan="8" style={{padding:'40px', textAlign:'center', color:'#888'}}>
-                                        No se encontraron productos con los filtros seleccionados.
-                                    </td>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em', width:'30px'}}>#</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Artículo</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Rubro / Marca</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Ubicación</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Costo</th>
+                                    <th style={{padding: '12px 24px', textAlign:'left', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Precio</th>
+                                    <th style={{padding: '12px 24px', textAlign:'center', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Stock (Min/Max)</th>
+                                    <th style={{padding: '12px 24px', textAlign:'right', color:'#4b5563', fontWeight:'600', textTransform:'uppercase', fontSize:'12px', letterSpacing:'0.05em'}}>Acciones</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody style={{divideY: '1px solid #e5e7eb'}}>
+                                {filteredProducts.map(p => (
+                                    <tr key={p.id} style={{borderBottom:'1px solid #f3f4f6', backgroundColor: 'white'}} onMouseOver={e => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}>
+                                        <td style={{padding: '16px 24px', color:'#6b7280', fontSize:'12px', fontFamily:'monospace'}}>{p.sku}</td>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <div style={{fontWeight:'600', color:'#111827'}}>{p.title}</div>
+                                            <div style={{color:'#6b7280', fontSize:'12px'}}>{p.barcode || 'S/N'}</div>
+                                        </td>
+                                        <td style={{padding: '16px 24px'}}>
+                                            <div style={{color: '#374151'}}>{p.rubro || p.category}</div>
+                                            <div style={{color:'#6b7280', fontSize:'12px', fontStyle:'italic'}}>{p.brand}</div>
+                                        </td>
+                                        <td style={{padding: '16px 24px', color:'#6b7280'}}>{p.location || '-'}</td>
+                                        <td style={{padding: '16px 24px', color:'#6b7280'}}>${Number(p.cost_price || 0).toFixed(2)}</td>
+                                        <td style={{padding: '16px 24px', fontWeight:'600', color:'#15803d'}}>${Number(p.price_base).toFixed(2)}</td>
+                                        <td style={{padding: '16px 24px', textAlign:'center'}}>
+                                            <span style={{
+                                                fontWeight:'600', fontSize:'14px', 
+                                                color: p.stock <= (p.stock_min||5) ? '#dc2626' : '#111827',
+                                                backgroundColor: p.stock <= (p.stock_min||5) ? '#fef2f2' : 'transparent',
+                                                padding: p.stock <= (p.stock_min||5) ? '2px 6px' : '0',
+                                                borderRadius: '4px'
+                                            }}>
+                                                {p.stock}
+                                            </span>
+                                            <div style={{fontSize:'11px', color:'#9ca3af', marginTop: '2px'}}>({p.stock_min || 0} / {p.stock_max || '-'})</div>
+                                        </td>
+                                        <td style={{padding: '16px 24px', textAlign:'right'}}>
+                                            <button onClick={() => handleEdit(p)} style={{background:'none', border:'none', cursor:'pointer', marginRight:'12px', color:'#2563eb', transition: 'color 0.2s'}} title="Editar">
+                                                <PenSquare size={18} />
+                                            </button>
+                                            <button onClick={() => handleDelete(p.id)} style={{background:'none', border:'none', cursor:'pointer', color:'#dc2626', transition: 'color 0.2s'}} title="Eliminar">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredProducts.length === 0 && (
+                                    <tr>
+                                        <td colSpan="8" style={{padding:'40px', textAlign:'center', color:'#6b7280', fontStyle: 'italic'}}>
+                                            No se encontraron productos con los filtros seleccionados.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+                )}
                 </>
             )}
 

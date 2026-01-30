@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
+import { MapPin, Search, Rocket, User, ShoppingCart, LogOut, LogIn } from 'lucide-react'
 import Home from './pages/Home'
 import ProductDetails from './pages/ProductDetails'
 import Login from './pages/Login'
@@ -58,7 +59,7 @@ function App() {
               
               <div className="store-locator">
                   <div className="location-trigger" onClick={(e) => handleNavClick(e, 'Selector de Tienda')}>
-                      📍 <span style={{textDecoration: 'underline'}}>Hermosillo, Son. ▼</span>
+                      <MapPin size={18} color="#f96302" /> <span style={{textDecoration: 'underline'}}>Hermosillo, Son. ▼</span>
                   </div>
                   <div className="store-status">
                       <span style={{color: '#166534', fontWeight: 'bold'}}>Abierto</span> - Cierra a las 10:00 p.m.
@@ -71,7 +72,9 @@ function App() {
                  if(!e.target.q.value) { e.preventDefault(); showNotification("Por favor ingresa un término de búsqueda", "error"); }
              }}>
                 <input type="text" placeholder="¿Qué estás buscando hoy?" name="q" />
-                <button type="submit">🔍</button>
+                <button type="submit" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                    <Search size={18} />
+                </button>
              </form>
           </div>
 
@@ -91,12 +94,14 @@ function App() {
                     gap:'5px',
                     whiteSpace: 'nowrap'
                 }}>
-                   <span>🚀</span> Cuenta PRO
+                   <Rocket size={16} /> Cuenta PRO
                 </Link>
             )}
 
             <div className="user-action" onClick={(e) => !user && handleNavClick(e, 'Mi Cuenta Detallado')}>
-                <div style={{color: '#f96302', fontSize: '24px', textAlign: 'center'}}>👤</div>
+                <div style={{color: '#f96302', textAlign: 'center', marginBottom: '2px'}}>
+                    <User size={24} strokeWidth={1.5} />
+                </div>
                 {user ? (
                    <div style={{lineHeight: '1.2'}}>
                         <div style={{fontWeight: 'bold', fontSize: '13px'}}>Hola, {user.name.split(' ')[0]}</div>
@@ -113,7 +118,9 @@ function App() {
             </div>
              
              <Link to="/cart" className="user-action cart-action" style={{textDecoration: 'none', color: 'inherit'}}>
-                <div style={{color: '#f96302', fontSize: '24px'}}>🛒</div>
+                <div style={{color: '#f96302'}}>
+                    <ShoppingCart size={24} strokeWidth={1.5} />
+                </div>
                 <div id="cart-badge" style={{fontSize: '14px', fontWeight: 'bold', transition: 'transform 0.2s', background: getCartCount() > 0 ? '#f96302' : 'transparent', color: getCartCount() > 0 ? 'white' : '#333', borderRadius: '50%', padding: '2px 6px'}}>{getCartCount()}</div>
              </Link>
           </div>

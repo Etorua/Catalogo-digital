@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Mail, Phone, MessageCircle, Send } from 'lucide-react';
 
 function Footer({ onSubscribe }) {
     const handleSubscribe = (e) => {
@@ -45,7 +46,7 @@ function Footer({ onSubscribe }) {
                                 gap: '5px'
                             }}
                         >
-                            ✉ Suscribirme ahora
+                            <Send size={16} /> Suscribirme ahora
                         </button>
                     </form>
                 </div>
@@ -60,21 +61,21 @@ function Footer({ onSubscribe }) {
                     
                     <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', fontSize: '12px' }}>
                         <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                            <span style={{color: '#f96302', fontSize: '18px'}}>📞</span>
+                            <Phone size={18} color="#f96302" />
                             <div>
                                 <div style={{fontWeight: 'bold'}}>Llámanos</div>
                                 <div style={{color: '#f96302'}}>800 PRO CENTER</div>
                             </div>
                         </div>
                         <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                            <span style={{color: '#f96302', fontSize: '18px'}}>💬</span>
+                            <MessageCircle size={18} color="#f96302" />
                             <div>
                                 <div style={{fontWeight: 'bold'}}>Whatsapp</div>
                                 <div style={{color: '#f96302'}}>+52 55 0000 0000</div>
                             </div>
                         </div>
                         <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                            <span style={{color: '#f96302', fontSize: '18px'}}>✉</span>
+                            <Mail size={18} color="#f96302" />
                             <div>
                                 <div style={{fontWeight: 'bold'}}>Escríbenos</div>
                                 <div style={{color: '#f96302'}}>contacto@procenter.com</div>
