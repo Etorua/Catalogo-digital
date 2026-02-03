@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
         const result = await pool.query(
             `INSERT INTO clients (full_name, rfc, email, phone, address, colonia, city, state, zip_code, credit_limit, notes)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-            [full_name, rfc, email, phone, address, colonia, city, state, zip_code, credit_limit || 0, notes]
+            [full_name || '', rfc || null, email || null, phone || null, address || null, colonia || null, city || null, state || null, zip_code || null, credit_limit || 0, notes || null]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -51,7 +51,7 @@ router.put('/:id', async (req, res) => {
             `UPDATE clients 
              SET full_name=$1, rfc=$2, email=$3, phone=$4, address=$5, colonia=$6, city=$7, state=$8, zip_code=$9, credit_limit=$10, notes=$11
              WHERE id=$12 RETURNING *`,
-            [full_name, rfc, email, phone, address, colonia, city, state, zip_code, credit_limit, notes, id]
+            [full_name || '', rfc || null, email || null, phone || null, address || null, colonia || null, city || null, state || null, zip_code || null, credit_limit || 0, notes || null, id]
         );
 
         if (result.rows.length === 0) {

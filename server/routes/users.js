@@ -27,8 +27,8 @@ router.post('/auth/register', async (req, res) => {
             ) VALUES ($1, $2, $3, $4, $5, 'customer', $6, $7, $8, $9, $10, $11, $12, $13) 
              RETURNING id, full_name, email, role`,
             [
-                full_name, email, password_hash, phone, finalCompanyName, 
-                person_type || 'fisica', legal_name, rfc, curp, fiscal_regime, zip_code, fiscal_address, cfdi_use || 'G03'
+                full_name, email, password_hash, phone || null, finalCompanyName || null, 
+                person_type || 'fisica', legal_name || null, rfc || null, curp || null, fiscal_regime || null, zip_code || null, fiscal_address || null, cfdi_use || 'G03'
             ]
         );
 
